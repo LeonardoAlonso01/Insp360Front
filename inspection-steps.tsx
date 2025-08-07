@@ -196,10 +196,7 @@ export default function InspectionSteps({ inspectionId, onBack, onFinalize }: In
       await apiClient.finalizeInspectionItem(inspectionId)
 
       // 3. Finalizar a INSPEÇÃO PRINCIPAL
-      // await apiClient.finalizeInspection({
-      //   inspectionId,
-      //   status: "concluida",
-      // })
+      await apiClient.completeInspection(inspectionId)
 
       toast({
         title: "Sucesso!",

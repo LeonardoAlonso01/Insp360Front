@@ -41,13 +41,15 @@ export function useInspections(options?: UseInspectionsOptions) {
     try {
       const apiResponse = await apiClient.getInspections({ page, limit, search, status })
 
+      console.log("API Response:", apiResponse)
+
       // Mapear ApiInspectionListItem para Inspection
       const mappedInspections: Inspection[] = apiResponse.map((apiInsp: ApiInspectionListItem) => ({
         id: apiInsp.id,
         cliente: apiInsp.client,
         responsavel: apiInsp.responsible,
         data: apiInsp.inspectionDate,
-        status: "pendente", // Status padrão, pois não vem na listagem
+        result: apiInsp.result, // Status padrão, pois não vem na listagem
         observacoes: "", // Observações padrão, pois não vem na listagem
       }))
 
@@ -128,8 +130,8 @@ export function useInspections(options?: UseInspectionsOptions) {
   idInspection: string
   marcaDutoFlexivel: string
   marcaUniao: string
-  diametro: number
-  comprimentoNominal: number
+  diametro: string
+  comprimentoNominal: string
 }) => {
   setLoading(true)
   try {

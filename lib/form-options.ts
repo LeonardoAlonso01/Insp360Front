@@ -7,19 +7,7 @@ export const OPTIONS_MARCA_DUTO = [
   { label: "Flexcasty", value: "Flexcasty" },
   { label: "Lacerfire", value: "Lacerfire" },
   { label: "Resmat", value: "Resmat" },
-  { label: "Inmasp", value: "Inmasp" },
-  { label: "Predl-Flex", value: "Predl-Flex" },
-  { label: "Resil Plus", value: "Resil Plus" },
-  { label: "Resil Jet", value: "Resil Jet" },
-  { label: "Seniorflex", value: "Seniorflex" },
   { label: "Recol", value: "Recol" },
-  { label: "Dutoflex", value: "Dutoflex" },
-  { label: "Flexmangueiras", value: "Flexmangueiras" },
-  { label: "Mangotex", value: "Mangotex" },
-  { label: "Hidrofire", value: "Hidrofire" },
-  { label: "Flexbom", value: "Flexbom" },
-  { label: "Manguetech", value: "Manguetech" },
-  { label: "Flexseg", value: "Flexseg" },
   { label: "Outros", value: "Outros" },
 ]
 
@@ -34,12 +22,6 @@ export const OPTIONS_MARCA_UNIAO = [
   { label: "GPM", value: "GPM" },
   { label: "Metalcasty", value: "Metalcasty" },
   { label: "Lacerfire", value: "Lacerfire" },
-  { label: "Inmasp", value: "Inmasp" },
-  { label: "Storz", value: "Storz" },
-  { label: "Akron", value: "Akron" },
-  { label: "Elkhart", value: "Elkhart" },
-  { label: "Task Force Tips", value: "Task Force Tips" },
-  { label: "Protek", value: "Protek" },
   { label: "Outros", value: "Outros" },
 ]
 

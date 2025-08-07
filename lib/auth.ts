@@ -63,6 +63,8 @@ class AuthService {
     if (typeof window !== "undefined") {
       localStorage.removeItem(this.TOKEN_KEY)
       localStorage.removeItem(this.USER_KEY)
+
+      window.location.href = "/" // Redirecionar para a página de login
     }
   }
 

@@ -9,7 +9,7 @@ export interface Inspection {
   cliente: string // Corresponde a 'client' na API
   responsavel: string // Corresponde a 'responsible' na API
   data: string // Corresponde a 'inspectionDate' na API
-  status: "pendente" | "concluida" | "em_andamento" // Não vem na listagem, será inferido/padrão
+  result: string
   observacoes?: string // Não vem na listagem, será padrão
   createdAt?: string
   updatedAt?: string
@@ -20,11 +20,12 @@ export interface CreateInspectionResponse {
 }
 
 // Nova interface para o formato de resposta da listagem de inspeções
-export interface ApiInspectionListItem {
+export interface  ApiInspectionListItem {
   id: string
   inspectionDate: string
   client: string
   responsible: string
+  result: string
 }
 
 // Novo tipo para a criação de inspeção principal
@@ -38,7 +39,7 @@ export interface CreateInspectionApiRequest {
 
 // Tipo para a requisição de atualização (mantido como antes, se a API de PUT for diferente)
 export interface UpdateInspectionRequest extends Partial<CreateInspectionApiRequest> {
-  status?: Inspection["status"] // Mantido para compatibilidade interna
+  result?: Inspection["result"] // Mantido para compatibilidade interna
 }
 
 export interface ApiResponse<T> {
@@ -114,7 +115,7 @@ class ApiClient {
         if (response.status === 401) {
           // Token expirado, fazer logout
           authService.logout()
-          window.location.href = "/login"
+          window.location.href = "/"
           throw new Error("Sessão expirada")
         }
         let errorMsg = `HTTP error! status: ${response.status}`;
@@ -159,16 +160,24 @@ class ApiClient {
       throw new Error("Company ID não encontrado. Usuário não autenticado ou dados incompletos.")
     }
 
+    const userId = authService.getUser()?.id;
+
+    if (!userId) {
+      throw new Error("User ID não encontrado. Usuário não autenticado ou dados incompletos.")
+    }
+
     const searchParams = new URLSearchParams()
     searchParams.append("companyId", companyId)
+    searchParams.append("userId", userId)
 
-    if (params?.page) searchParams.append("page", params.page.toString())
-    if (params?.limit) searchParams.append("limit", params.limit.toString())
-    if (params?.search) searchParams.append("search", params.search)
-    if (params?.status) searchParams.append("status", params.status)
+    if (params?.search){
+      searchParams.append("query", params.search)
+    }
 
     const queryString = searchParams.toString()
     const endpoint = `/inspection${queryString ? `?${queryString}` : ""}`
+
+    console.log("Buscando inspeções com endpoint:", endpoint) 
 
     return this.request<ApiInspectionListItem[]>(endpoint)
   }
@@ -196,7 +205,7 @@ class ApiClient {
       companyId: companyId,
       client: data.client,
       responsible: data.responsible,
-      result: "Em Andamento", // Valor padrão para o início da inspeção
+      result: "Pendente", // Valor padrão para o início da inspeção
       obs: data.obs,
     }
 
@@ -353,6 +362,41 @@ class ApiClient {
     }
 
     return response.blob()
+  }
+  // Gerar relatório em PDF da inspeção (novo endpoint)
+  async generateInspectionReport(inspectionId: string): Promise<Blob> {
+    const response = await fetch(`${this.baseURL}/inspection/gerarrelatorio?id=${inspectionId}`, {
+      headers: {
+        ...authService.getAuthHeaders(),
+      },
+    })
+    if (!response.ok) {
+      throw new Error("Erro ao gerar relatório")
+    }
+    return response.blob()
+  }
+
+  // Buscar dados agregados do dashboard (novo endpoint)
+  async getDashboardData(): Promise<{
+    total: number
+    pending: number
+    inProgress: number
+    completed: number
+    completionRate: number
+  }> {
+    const companyId = authService.getCompanyId()
+    const userId = authService.getUser()?.id // ajuste conforme seu authService
+    if (!companyId || !userId) {
+      throw new Error("CompanyId ou UserId não encontrado.")
+    }
+    return this.request(`/inspection/dashboarddata?companyId=${companyId}&userId=${userId}`)
+  }
+
+  // Completar inspeção (novo endpoint)
+  async completeInspection(inspectionId: string): Promise<void> {
+    return this.request<void>(`/inspection/complete/${inspectionId}`, {
+      method: "PUT",
+    })
   }
 }
 

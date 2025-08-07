@@ -55,7 +55,7 @@ export function useAdvancedSearch({ inspections, initialFilters }: UseAdvancedSe
 
       // Filtro por status
       if (filters.status.length > 0) {
-        if (!filters.status.includes(inspection.status)) {
+        if (!filters.status.includes(inspection.result)) {
           return false
         }
       }
@@ -101,9 +101,9 @@ export function useAdvancedSearch({ inspections, initialFilters }: UseAdvancedSe
   // Estatísticas dos resultados
   const searchStats = useMemo(() => {
     const total = filteredInspections.length
-    const pendentes = filteredInspections.filter((i) => i.status === "pendente").length
-    const emAndamento = filteredInspections.filter((i) => i.status === "em_andamento").length
-    const concluidas = filteredInspections.filter((i) => i.status === "concluida").length
+    const pendentes = filteredInspections.filter((i) => i.result === "pendente").length
+    const emAndamento = filteredInspections.filter((i) => i.result === "em_andamento").length
+    const concluidas = filteredInspections.filter((i) => i.result === "concluida").length
 
     return {
       total,
@@ -181,7 +181,7 @@ export function useAdvancedSearch({ inspections, initialFilters }: UseAdvancedSe
       cliente: inspection.cliente,
       responsavel: inspection.responsavel,
       data: inspection.data,
-      status: inspection.status,
+      status: inspection.result,
       observacoes: inspection.observacoes || "",
     }))
 

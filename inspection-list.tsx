@@ -81,21 +81,21 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
     }
   }
 
-  const getStatusBadge = (status: Inspection["status"]) => {
+  const getStatusBadge = (status: Inspection["result"]) => {
     switch (status) {
-      case "pendente":
+      case "Pending":
         return (
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
             Pendente
           </Badge>
         )
-      case "concluida":
+      case "Completed":
         return (
           <Badge variant="secondary" className="bg-green-100 text-green-800">
             Concluída
           </Badge>
         )
-      case "em_andamento":
+      case "InProgress":
         return (
           <Badge variant="secondary" className="bg-blue-100 text-blue-800">
             Em Andamento
@@ -143,7 +143,7 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
                 <Building2 className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Inspeções</span>
               </Button>
-              <Button
+              {/*<Button
                 variant="ghost"
                 size="sm"
                 className="text-slate-600 hover:text-slate-900 text-xs sm:text-sm px-2 sm:px-3"
@@ -151,7 +151,7 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
               >
                 <Users className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Usuário</span>
-              </Button>
+              </Button>*/}
             </nav>
           </div>
         </div>
@@ -336,7 +336,7 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
                             <TableCell>
                               <span className="text-slate-600">{formatDate(inspection.data)}</span>
                             </TableCell>
-                            <TableCell>{getStatusBadge(inspection.status)}</TableCell>
+                            <TableCell>{getStatusBadge(inspection.result)}</TableCell>
                             <TableCell>
                               <div className="flex items-center space-x-2">
                                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -421,7 +421,7 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
                             <Calendar className="h-4 w-4 text-slate-500" />
                             <span className="text-sm text-slate-600">{formatDate(inspection.data)}</span>
                           </div>
-                          {getStatusBadge(inspection.status)}
+                          {getStatusBadge(inspection.result)}
                         </div>
 
                         {inspection.observacoes && (

@@ -32,103 +32,20 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
   const loadInspectionData = async () => {
     setLoading(true)
     try {
-      // Carregar dados da inspeção
-      const inspectionResponse = await apiClient.getInspection(inspectionId)
-      if (inspectionResponse.success) {
-        setInspection(inspectionResponse.data)
-      }
+      // Carregar dados da inspeção diretamente da API mockada
+      const inspectionData = await apiClient.getInspection(inspectionId)
+      setInspection(inspectionData)
 
-      // Carregar itens da inspeção
-      const itemsResponse = await apiClient.getInspectionItems(inspectionId)
-      if (itemsResponse.success) {
-        setItems(itemsResponse.data)
-      }
+      // Carregar itens da inspeção diretamente da API mockada
+      const itemsData = await apiClient.getInspectionItems(inspectionId)
+      setItems(itemsData)
     } catch (error) {
-      console.log("Error loading inspection data:", error)
-
-      // Mock data para desenvolvimento
-      setInspection({
-        id: inspectionId,
-        cliente: "Empresa ABC Ltda",
-        responsavel: "João Silva",
-        data: "2024-06-14",
-        status: "concluida",
-        observacoes: "Inspeção finalizada com sucesso",
+      console.error("Error loading MOCKED inspection data:", error)
+      toast({
+        title: "Erro de Mock!",
+        description: "Não foi possível carregar os dados mockados da inspeção.",
+        variant: "destructive",
       })
-
-      setItems([
-        {
-          id: "item-1",
-          inspectionId,
-          step1Data: {
-            marcaDutoFlexivel: "Contitech FlexSteel",
-            marcaUniao: "Parker Hannifin",
-            diametro: 50.8,
-            comprimentoNominal: 12.5,
-          },
-          step2Data: {
-            dataInstalacao: "2024-06-01",
-            localInstalacao: "Setor A - Linha de Produção 1",
-            tipoInstalacao: "subterranea",
-            profundidade: 2.5,
-          },
-          step3Data: {},
-          step4Data: {},
-          step5Data: {
-            statusFinal: "aprovado",
-            observacoesFinais:
-              "Item aprovado sem ressalvas. Todas as especificações técnicas foram atendidas conforme normas vigentes.",
-          },
-          createdAt: "2024-06-14T10:00:00Z",
-        },
-        {
-          id: "item-2",
-          inspectionId,
-          step1Data: {
-            marcaDutoFlexivel: "Technip Flexibles",
-            marcaUniao: "Cameron International",
-            diametro: 76.2,
-            comprimentoNominal: 8.0,
-          },
-          step2Data: {
-            dataInstalacao: "2024-06-02",
-            localInstalacao: "Setor B - Linha de Transferência",
-            tipoInstalacao: "aerea",
-            profundidade: 0,
-          },
-          step3Data: {},
-          step4Data: {},
-          step5Data: {
-            statusFinal: "pendente",
-            observacoesFinais: "Aguardando teste de pressão final. Instalação conforme especificações.",
-          },
-          createdAt: "2024-06-14T11:30:00Z",
-        },
-        {
-          id: "item-3",
-          inspectionId,
-          step1Data: {
-            marcaDutoFlexivel: "NOV Flexibles",
-            marcaUniao: "FMC Technologies",
-            diametro: 101.6,
-            comprimentoNominal: 15.0,
-          },
-          step2Data: {
-            dataInstalacao: "2024-06-03",
-            localInstalacao: "Setor C - Manifold Principal",
-            tipoInstalacao: "submarina",
-            profundidade: 5.2,
-          },
-          step3Data: {},
-          step4Data: {},
-          step5Data: {
-            statusFinal: "reprovado",
-            observacoesFinais:
-              "Identificada falha na vedação da união. Necessária substituição do componente antes da aprovação final.",
-          },
-          createdAt: "2024-06-14T14:15:00Z",
-        },
-      ])
     } finally {
       setLoading(false)
     }
@@ -157,6 +74,7 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
         variant: "success",
       })
     } catch (error) {
+      console.error("PDF Generation Error:", error)
       toast({
         title: "Erro!",
         description: "Não foi possível gerar o PDF",
@@ -184,10 +102,8 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
         items,
       })
 
-      // Abrir PDF em nova aba
       const url = URL.createObjectURL(blob)
       window.open(url, "_blank")
-      URL.revokeObjectURL(url)
 
       toast({
         title: "Sucesso!",
@@ -195,6 +111,7 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
         variant: "success",
       })
     } catch (error) {
+      console.error("PDF Preview Error:", error)
       toast({
         title: "Erro!",
         description: "Não foi possível visualizar o PDF",
@@ -241,7 +158,6 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Toasts */}
       {toasts.map((toast) => (
         <Toast
           key={toast.id}
@@ -252,7 +168,6 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
         />
       ))}
 
-      {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -269,10 +184,8 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
         </div>
       </header>
 
-      {/* Conteúdo principal */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
-          {/* Header da página */}
           <div className="text-center space-y-2">
             <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-4">
               <CheckCircle className="h-6 w-6 text-green-600" />
@@ -281,8 +194,7 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
             <p className="text-slate-600">Relatório completo da inspeção realizada</p>
           </div>
 
-          {/* Estatísticas rápidas */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-2">
@@ -335,9 +247,8 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
 
-          {/* Informações da Inspeção */}
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -369,20 +280,19 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
             </CardContent>
           </Card>
 
-          {/* Lista de Itens
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
+                {/* <span className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-red-600" />
                   Itens Inspecionados ({items.length})
-                </span>
+                </span> */}
                 <div className="flex gap-2">
-                  <Button
+                  {/* <Button
                     onClick={handlePreviewPDF}
                     disabled={previewingPDF}
                     variant="outline"
-                    className="border-red-200 text-red-700 hover:bg-red-50"
+                    className="border-red-200 text-red-700 hover:bg-red-50 bg-transparent"
                   >
                     {previewingPDF ? (
                       <>
@@ -395,16 +305,42 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
                         Visualizar PDF
                       </>
                     )}
-                  </Button>
+                  </Button> */}
                   <Button
-                    onClick={handleGeneratePDF}
+                    onClick={async () => {
+                      setGeneratingPDF(true)
+                      try {
+                        const blob = await apiClient.generateInspectionReport(inspectionId)
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `relatorio-inspecao-${inspectionId}.pdf`
+                        document.body.appendChild(a)
+                        a.click()
+                        a.remove()
+                        URL.revokeObjectURL(url)
+                        toast({
+                          title: "Sucesso!",
+                          description: "PDF gerado pela API e baixado com sucesso",
+                          variant: "success",
+                        })
+                      } catch (error) {
+                        toast({
+                          title: "Erro!",
+                          description: "Não foi possível baixar o PDF da API",
+                          variant: "destructive",
+                        })
+                      } finally {
+                        setGeneratingPDF(false)
+                      }
+                    }}
                     disabled={generatingPDF}
                     className="bg-red-600 hover:bg-red-700 text-white"
                   >
                     {generatingPDF ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                        Gerando PDF...
+                        Baixando PDF...
                       </>
                     ) : (
                       <>
@@ -415,7 +351,7 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
                   </Button>
                 </div>
               </CardTitle>
-              <CardDescription>Resumo de todos os itens inspecionados</CardDescription>
+              {/* <CardDescription>Resumo de todos os itens inspecionados</CardDescription> */}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -484,7 +420,7 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
                 )}
               </div>
             </CardContent>
-          </Card> */}
+          </Card>
         </div>
       </main>
     </div>

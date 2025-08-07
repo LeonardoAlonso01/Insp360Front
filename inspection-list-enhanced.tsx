@@ -13,6 +13,7 @@ import {
   RefreshCw,
   TrendingUp,
   BarChart3,
+  LogOut
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,6 +26,8 @@ import { useInspections } from "@/hooks/use-inspections"
 import { useAdvancedSearch } from "@/hooks/use-advanced-search"
 import { useToast } from "@/hooks/use-toast"
 import type { Inspection } from "@/lib/api"
+import { useState, useEffect } from "react" // Importar useEffect
+import { useAuth } from "@/hooks/use-auth"
 
 interface InspectionListEnhancedProps {
   onCreateNew: () => void
@@ -33,7 +36,9 @@ interface InspectionListEnhancedProps {
 }
 
 export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProfile }: InspectionListEnhancedProps) {
-  const { toasts, toast, removeToast } = useToast()
+  const [downloadingPdfId, setDownloadingPdfId] = useState<string | null>(null)
+  const { toasts, toast, removeToast } = useToast();
+  const { user, logout } = useAuth();
 
   // Hook para buscar todas as inspeções (sem paginação para filtros locais)
   const { inspections, loading, error, deleteInspection, refetch } = useInspections({
@@ -54,6 +59,28 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
   } = useAdvancedSearch({
     inspections,
   })
+
+  // Dashboard data state
+  const [dashboardData, setDashboardData] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    completionRate: 0,
+  })
+
+  useEffect(() => {
+    async function fetchDashboard() {
+      try {
+        const { apiClient } = await import("@/lib/api")
+        const data = await apiClient.getDashboardData()
+        setDashboardData(data)
+      } catch (err) {
+        // fallback: mantém valores zerados
+      }
+    }
+    fetchDashboard()
+  }, [])
 
   const handleDelete = async (id: string, clienteName: string) => {
     if (!confirm(`Tem certeza que deseja excluir a inspeção de "${clienteName}"?`)) {
@@ -76,21 +103,28 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
     }
   }
 
-  const getStatusBadge = (status: Inspection["status"]) => {
+  const getStatusBadge = (status: Inspection["result"]) => {
+    console.log("getStatusBadge called with status:", status)
     switch (status) {
-      case "pendente":
+      case "Pending":
         return (
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
             Pendente
           </Badge>
         )
-      case "concluida":
+      case "Completed":
         return (
           <Badge variant="secondary" className="bg-green-100 text-green-800">
             Concluída
           </Badge>
         )
-      case "em_andamento":
+      case "InProgress":
+        return (
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            Em Andamento
+          </Badge>
+        )
+      case "Em Andamento":
         return (
           <Badge variant="secondary" className="bg-blue-100 text-blue-800">
             Em Andamento
@@ -103,6 +137,17 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("pt-BR")
+  }
+
+  const handleLogout = () => {
+    if (confirm("Tem certeza que deseja sair do sistema?")) {
+      logout()
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso",
+        variant: "success",
+      })
+    }
   }
 
   return (
@@ -124,8 +169,7 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
           <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-red-600" />
-                <span className="font-semibold text-slate-900 text-sm sm:text-base">Sistema de Inspeções</span>
+                <img src="/logo.png" alt="Logo Insp360" className="h-12" />
               </div>
             </div>
 
@@ -138,7 +182,7 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                 <Building2 className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Inspeções</span>
               </Button>
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="sm"
                 className="text-slate-600 hover:text-slate-900 text-xs sm:text-sm px-2 sm:px-3"
@@ -146,6 +190,10 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
               >
                 <Users className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Usuário</span>
+              </Button> */}
+              <Button variant="ghost" size="sm" className="bg-red-50 text-red-700 hover:bg-red-100 text-xs sm:text-sm px-2 sm:px-3" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
               </Button>
             </nav>
           </div>
@@ -180,7 +228,7 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
             </div>
           </div>
 
-          {/* Estatísticas dos Resultados */}
+          {/* Estatísticas dos Resultados - preenchidas via API dashboard */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <Card>
               <CardContent className="p-4">
@@ -189,7 +237,7 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                     <FileText className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-900">{searchStats.total}</p>
+                    <p className="text-2xl font-bold text-slate-900">{dashboardData.total}</p>
                     <p className="text-sm text-slate-600">Total</p>
                   </div>
                 </div>
@@ -202,7 +250,7 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                     <Calendar className="h-4 w-4 text-yellow-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-900">{searchStats.pendentes}</p>
+                    <p className="text-2xl font-bold text-slate-900">{dashboardData.pending}</p>
                     <p className="text-sm text-slate-600">Pendentes</p>
                   </div>
                 </div>
@@ -215,7 +263,7 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                     <Eye className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-900">{searchStats.emAndamento}</p>
+                    <p className="text-2xl font-bold text-slate-900">{dashboardData.inProgress}</p>
                     <p className="text-sm text-slate-600">Em Andamento</p>
                   </div>
                 </div>
@@ -228,7 +276,7 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                     <FileText className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-900">{searchStats.concluidas}</p>
+                    <p className="text-2xl font-bold text-slate-900">{dashboardData.completed}</p>
                     <p className="text-sm text-slate-600">Concluídas</p>
                   </div>
                 </div>
@@ -241,7 +289,7 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                     <TrendingUp className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-900">{searchStats.percentualConcluidas}%</p>
+                    <p className="text-2xl font-bold text-slate-900">{dashboardData.completionRate}%</p>
                     <p className="text-sm text-slate-600">Taxa Conclusão</p>
                   </div>
                 </div>
@@ -356,28 +404,44 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                             <TableCell>
                               <span className="text-slate-600">{formatDate(inspection.data)}</span>
                             </TableCell>
-                            <TableCell>{getStatusBadge(inspection.status)}</TableCell>
+                            <TableCell>{getStatusBadge(inspection.result)}</TableCell>
                             <TableCell>
                               <div className="flex items-center space-x-2">
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   className="h-8 w-8 p-0"
-                                  onClick={() => onEdit?.(inspection)}
+                                  disabled={downloadingPdfId === inspection.id}
+                                  onClick={async () => {
+                                    setDownloadingPdfId(inspection.id)
+                                    try {
+                                      const { apiClient } = await import("@/lib/api")
+                                      const pdfBlob = await apiClient.generateInspectionReport(inspection.id)
+                                      const url = window.URL.createObjectURL(pdfBlob)
+                                      const link = document.createElement("a")
+                                      link.href = url
+                                      link.download = `inspecao_${inspection.id}.pdf`
+                                      document.body.appendChild(link)
+                                      link.click()
+                                      link.remove()
+                                      window.URL.revokeObjectURL(url)
+                                    } catch (error) {
+                                      toast({
+                                        title: "Erro ao baixar PDF",
+                                        description: "Não foi possível gerar o relatório PDF desta inspeção.",
+                                        variant: "destructive",
+                                      })
+                                    } finally {
+                                      setDownloadingPdfId(null)
+                                    }
+                                  }}
                                 >
-                                  <Edit className="h-4 w-4" />
+                                  {downloadingPdfId === inspection.id ? (
+                                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-slate-600 border-t-transparent inline-block"></span>
+                                  ) : (
+                                    <FileText className="h-4 w-4" />
+                                  )}
                                 </Button>
-                                {/* <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                  onClick={() => handleDelete(inspection.id, inspection.cliente)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button> */}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -417,30 +481,41 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                               <span className="text-slate-600 text-sm">{inspection.responsavel}</span>
                             </div>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Visualizar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => onEdit?.(inspection)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => handleDelete(inspection.id, inspection.cliente)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            disabled={downloadingPdfId === inspection.id}
+                            onClick={async () => {
+                              setDownloadingPdfId(inspection.id)
+                              try {
+                                const { apiClient } = await import("@/lib/api")
+                                const pdfBlob = await apiClient.generateInspectionReport(inspection.id)
+                                const url = window.URL.createObjectURL(pdfBlob)
+                                const link = document.createElement("a")
+                                link.href = url
+                                link.download = `inspecao_${inspection.id}.pdf`
+                                document.body.appendChild(link)
+                                link.click()
+                                link.remove()
+                                window.URL.revokeObjectURL(url)
+                              } catch (error) {
+                                toast({
+                                  title: "Erro ao baixar PDF",
+                                  description: "Não foi possível gerar o relatório PDF desta inspeção.",
+                                  variant: "destructive",
+                                })
+                              } finally {
+                                setDownloadingPdfId(null)
+                              }
+                            }}
+                          >
+                            {downloadingPdfId === inspection.id ? (
+                              <span className="animate-spin rounded-full h-4 w-4 border-2 border-slate-600 border-t-transparent inline-block"></span>
+                            ) : (
+                              <FileText className="h-4 w-4" />
+                            )}
+                          </Button>
                         </div>
 
                         <div className="flex items-center justify-between">
@@ -448,7 +523,7 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                             <Calendar className="h-4 w-4 text-slate-500" />
                             <span className="text-sm text-slate-600">{formatDate(inspection.data)}</span>
                           </div>
-                          {getStatusBadge(inspection.status)}
+                          {getStatusBadge(inspection.result)}
                         </div>
 
                         {inspection.observacoes && (

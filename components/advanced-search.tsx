@@ -91,9 +91,11 @@ const QUICK_FILTERS = [
 export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoading }: AdvancedSearchProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [savedSearches, setSavedSearches] = useLocalStorage<SavedSearch[]>("saved-searches", [])
-  const [searchHistory, setSearchHistory] = useLocalStorage<string[]>("search-history", [])
-  const [showSuggestions, setShowSuggestions] = useState(false)
+  // const [searchHistory, setSearchHistory] = useLocalStorage<string[]>("search-history", [])
+  // const [showSuggestions, setShowSuggestions] = useState(false)
   const { toast } = useToast()
+  const [searchInput, setSearchInput] = useState(filters.searchTerm)
+  const [searchLoading, setSearchLoading] = useState(false)
 
   // Filtros rápidos
   const applyQuickFilter = (filterType: string) => {
@@ -192,30 +194,7 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
     onFiltersChange(emptyFilters)
   }
 
-  // Contar filtros ativos
-  const getActiveFiltersCount = () => {
-    let count = 0
-    if (filters.searchTerm) count++
-    if (filters.cliente) count++
-    if (filters.responsavel) count++
-    if (filters.status.length > 0) count++
-    if (filters.dataInicio || filters.dataFim) count++
-    if (filters.observacoes) count++
-    if (filters.hasObservacoes !== null) count++
-    return count
-  }
-
-  // Adicionar ao histórico
-  useEffect(() => {
-    if (filters.searchTerm && filters.searchTerm.length > 2) {
-      setSearchHistory((prev) => {
-        const newHistory = [filters.searchTerm, ...prev.filter((term) => term !== filters.searchTerm)].slice(0, 10)
-        return newHistory
-      })
-    }
-  }, [filters.searchTerm, setSearchHistory])
-
-  const activeFiltersCount = getActiveFiltersCount()
+  // Busca recente removida
   const favoriteSearches = savedSearches.filter((search) => search.isFavorite)
 
   return (
@@ -227,47 +206,46 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
           <Input
             type="text"
             placeholder="Buscar inspeções..."
-            value={filters.searchTerm}
-            onChange={(e) => onFiltersChange({ ...filters, searchTerm: e.target.value })}
-            onFocus={() => setShowSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="pl-10 h-11 transition-all duration-200 focus:ring-2 focus:ring-red-500/20"
           />
-
-          {/* Sugestões de busca */}
-          {showSuggestions && searchHistory.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-              <div className="p-2">
-                <p className="text-xs font-medium text-slate-500 mb-2">Buscas recentes</p>
-                {searchHistory.map((term, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    className="w-full text-left px-2 py-1 text-sm hover:bg-slate-100 rounded flex items-center gap-2"
-                    onClick={() => onFiltersChange({ ...filters, searchTerm: term })}
-                  >
-                    <Clock className="h-3 w-3 text-slate-400" />
-                    {term}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-
-        {/* Botão Filtros Avançados */}
+        <Button
+          variant="outline"
+          className="h-11 px-4 bg-black text-white hover:bg-black/80"
+          disabled={searchLoading}
+          onClick={async () => {
+            setSearchLoading(true)
+            try {
+              const { apiClient } = await import("@/lib/api")
+              const inspections = await apiClient.getInspections({ search: searchInput })
+              console.log("Inspeções encontradas:", inspections);
+              onFiltersChange({ ...filters, searchTerm: searchInput })
+              toast({
+                title: "Busca realizada!",
+                description: `Foram encontrados ${inspections.length} resultados para "${searchInput}"`,
+                variant: "success",
+              })
+            } catch (error) {
+              toast({
+                title: "Erro!",
+                description: "Não foi possível buscar inspeções",
+                variant: "destructive",
+              })
+            } finally {
+              setSearchLoading(false)
+            }
+          }}
+        >
+          {searchLoading ? (
+            <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2 inline-block"></span>
+          ) : (
+            <Search className="h-4 w-4 mr-2 text-white" />
+          )}
+        </Button>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="h-11 px-4">
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-              {activeFiltersCount > 0 && (
-                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
-                  {activeFiltersCount}
-                </Badge>
-              )}
-            </Button>
-          </DialogTrigger>
+          <DialogTrigger asChild></DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -276,7 +254,6 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
               </DialogTitle>
               <DialogDescription>Use os filtros abaixo para encontrar exatamente o que você procura</DialogDescription>
             </DialogHeader>
-
             <div className="space-y-6">
               {/* Buscas Favoritas */}
               {favoriteSearches.length > 0 && (
@@ -305,7 +282,6 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
                   </CardContent>
                 </Card>
               )}
-
               {/* Filtros Rápidos */}
               <Card>
                 <CardHeader className="pb-3">
@@ -327,7 +303,6 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
                   </div>
                 </CardContent>
               </Card>
-
               {/* Filtros Detalhados */}
               <Card>
                 <CardHeader className="pb-3">
@@ -348,7 +323,6 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
                         className="h-10"
                       />
                     </div>
-
                     {/* Responsável */}
                     <div className="space-y-2">
                       <Label className="text-sm font-medium flex items-center">
@@ -363,7 +337,6 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
                         className="h-10"
                       />
                     </div>
-
                     {/* Data Início */}
                     <div className="space-y-2">
                       <Label className="text-sm font-medium flex items-center">
@@ -377,7 +350,6 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
                         className="h-10"
                       />
                     </div>
-
                     {/* Data Fim */}
                     <div className="space-y-2">
                       <Label className="text-sm font-medium flex items-center">
@@ -392,7 +364,6 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
                       />
                     </div>
                   </div>
-
                   {/* Status */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Status</Label>
@@ -415,7 +386,6 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
                       ))}
                     </div>
                   </div>
-
                   {/* Observações */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium flex items-center">
@@ -461,7 +431,6 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
                   </div>
                 </CardContent>
               </Card>
-
               {/* Buscas Salvas */}
               {savedSearches.length > 0 && (
                 <Card>
@@ -518,15 +487,14 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
                   </CardContent>
                 </Card>
               )}
-
               {/* Ações */}
               <div className="flex items-center justify-between pt-4 border-t">
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" onClick={saveSearch} disabled={activeFiltersCount === 0}>
+                  <Button variant="outline" onClick={saveSearch}>
                     <Bookmark className="h-4 w-4 mr-2" />
                     Salvar Busca
                   </Button>
-                  <Button variant="outline" onClick={clearAllFilters} disabled={activeFiltersCount === 0}>
+                  <Button variant="outline" onClick={clearAllFilters}>
                     <X className="h-4 w-4 mr-2" />
                     Limpar Tudo
                   </Button>
@@ -538,127 +506,7 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
             </div>
           </DialogContent>
         </Dialog>
-
-        {/* Menu de Ações */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-11 px-3">
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={saveSearch} disabled={activeFiltersCount === 0}>
-              <Bookmark className="h-4 w-4 mr-2" />
-              Salvar Busca
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Download className="h-4 w-4 mr-2" />
-              Exportar Resultados
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={clearAllFilters} disabled={activeFiltersCount === 0}>
-              <X className="h-4 w-4 mr-2" />
-              Limpar Filtros
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
-
-      {/* Filtros Ativos */}
-      {activeFiltersCount > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-slate-600">Filtros ativos:</span>
-
-          {filters.searchTerm && (
-            <Badge variant="secondary" className="gap-1">
-              Busca: {filters.searchTerm}
-              <button
-                onClick={() => onFiltersChange({ ...filters, searchTerm: "" })}
-                className="ml-1 hover:bg-slate-300 rounded-full p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          {filters.cliente && (
-            <Badge variant="secondary" className="gap-1">
-              Cliente: {filters.cliente}
-              <button
-                onClick={() => onFiltersChange({ ...filters, cliente: "" })}
-                className="ml-1 hover:bg-slate-300 rounded-full p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          {filters.responsavel && (
-            <Badge variant="secondary" className="gap-1">
-              Responsável: {filters.responsavel}
-              <button
-                onClick={() => onFiltersChange({ ...filters, responsavel: "" })}
-                className="ml-1 hover:bg-slate-300 rounded-full p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          {filters.status.length > 0 && (
-            <Badge variant="secondary" className="gap-1">
-              Status: {filters.status.join(", ")}
-              <button
-                onClick={() => onFiltersChange({ ...filters, status: [] })}
-                className="ml-1 hover:bg-slate-300 rounded-full p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          {(filters.dataInicio || filters.dataFim) && (
-            <Badge variant="secondary" className="gap-1">
-              Data: {filters.dataInicio || "..."} até {filters.dataFim || "..."}
-              <button
-                onClick={() => onFiltersChange({ ...filters, dataInicio: "", dataFim: "" })}
-                className="ml-1 hover:bg-slate-300 rounded-full p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          {filters.observacoes && (
-            <Badge variant="secondary" className="gap-1">
-              Observações: {filters.observacoes}
-              <button
-                onClick={() => onFiltersChange({ ...filters, observacoes: "" })}
-                className="ml-1 hover:bg-slate-300 rounded-full p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          {filters.hasObservacoes !== null && (
-            <Badge variant="secondary" className="gap-1">
-              {filters.hasObservacoes ? "Com observações" : "Sem observações"}
-              <button
-                onClick={() => onFiltersChange({ ...filters, hasObservacoes: null })}
-                className="ml-1 hover:bg-slate-300 rounded-full p-0.5"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
-
-          <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-6 px-2 text-xs">
-            Limpar todos
-          </Button>
-        </div>
-      )}
-
       {/* Resultados */}
       <div className="flex items-center justify-between text-sm text-slate-600">
         <span>
@@ -667,34 +515,9 @@ export function AdvancedSearch({ filters, onFiltersChange, totalResults, isLoadi
           ) : (
             <>
               {totalResults} resultado{totalResults !== 1 ? "s" : ""} encontrado{totalResults !== 1 ? "s" : ""}
-              {activeFiltersCount > 0 && ` com ${activeFiltersCount} filtro${activeFiltersCount !== 1 ? "s" : ""}`}
             </>
           )}
         </span>
-
-        {totalResults > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                Exportar <ChevronDown className="h-3 w-3 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Download className="h-4 w-4 mr-2" />
-                Exportar como CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Download className="h-4 w-4 mr-2" />
-                Exportar como PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Download className="h-4 w-4 mr-2" />
-                Exportar como Excel
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
       </div>
     </div>
   )

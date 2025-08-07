@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArrowLeft, Building2, CheckCircle, FileText, User, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator"
 import { Toast } from "@/components/ui/toast"
 import { useInspections } from "@/hooks/use-inspections"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/hooks/use-auth"
 import type { Inspection } from "@/lib/api"
 
 interface InspectionFormProps {
@@ -23,11 +24,19 @@ interface InspectionFormProps {
 }
 
 export default function InspectionForm({ onBack, onInspectionCreated, editingInspection }: InspectionFormProps) {
+  const { user } = useAuth()
   const [formData, setFormData] = useState({
     cliente: editingInspection?.cliente || "",
     responsavel: editingInspection?.responsavel || "",
     observacoes: editingInspection?.observacoes || "",
   })
+
+  // Atualiza o campo responsavel sempre que o usuário logado mudar
+  useEffect(() => {
+    if (user?.name) {
+      setFormData((prev) => ({ ...prev, responsavel: user.name }))
+    }
+  }, [user?.name])
 
   const { toasts, toast, removeToast } = useToast()
   const { createInspection, updateInspection } = useInspections({ autoFetch: false })
@@ -97,10 +106,12 @@ export default function InspectionForm({ onBack, onInspectionCreated, editingIns
   }
 
   const handleInputChange = (field: string, value: string) => {
+    // Não permitir edição do campo responsavel
+    if (field === "responsavel") return
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const isFormValid = formData.cliente.trim() && formData.responsavel.trim()
+  const isFormValid = formData.cliente.trim() && String(formData.responsavel).trim()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -140,14 +151,14 @@ export default function InspectionForm({ onBack, onInspectionCreated, editingIns
                 <Building2 className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Inspeções</span>
               </Button>
-              <Button
+              {/*<Button
                 variant="ghost"
                 size="sm"
                 className="text-slate-600 hover:text-slate-900 text-xs sm:text-sm px-2 sm:px-3"
               >
                 <Users className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Usuário</span>
-              </Button>
+              </Button>*/}
             </nav>
           </div>
         </div>
@@ -226,12 +237,15 @@ export default function InspectionForm({ onBack, onInspectionCreated, editingIns
                   <Input
                     id="responsavel"
                     type="text"
-                    placeholder="Digite o nome do responsável"
+                    placeholder="Nome do responsável"
                     value={formData.responsavel}
-                    onChange={(e) => handleInputChange("responsavel", e.target.value)}
-                    className="h-12 sm:h-11 transition-all duration-200 focus:ring-2 focus:ring-red-500/20 text-base sm:text-sm"
+                    disabled
+                    className="h-12 sm:h-11 transition-all duration-200 focus:ring-2 focus:ring-red-500/20 text-base sm:text-sm bg-slate-100 text-slate-700 cursor-not-allowed"
                     required
                   />
+                  {formData.responsavel && (
+                    <p className="text-xs text-slate-500 mt-1">Usuário logado: <span className="font-semibold">{formData.responsavel}</span></p>
+                  )}
                 </div>
 
                 {/* Campo Observações */}
