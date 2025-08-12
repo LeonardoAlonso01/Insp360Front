@@ -88,7 +88,7 @@ export function SearchSelect({
 
       {open && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-md shadow-lg">
-          {/* Campo de busca */}
+          {/* Campo de busca
           <div className="flex items-center border-b px-3 py-2">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input
@@ -99,7 +99,7 @@ export function SearchSelect({
               className="flex-1 outline-none text-sm bg-transparent"
               autoFocus
             />
-          </div>
+          </div> */}
 
           {/* Lista de opções */}
           <div className="max-h-60 overflow-y-auto">
