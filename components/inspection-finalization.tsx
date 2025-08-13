@@ -122,14 +122,33 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
     }
   }
 
-  const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: Inspection["result"]) => {
+    console.log("getStatusBadge called with status:", status)
     switch (status) {
-      case "aprovado":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">✅ Aprovado</Badge>
-      case "reprovado":
-        return <Badge className="bg-red-100 text-red-800 border-red-200">❌ Reprovado</Badge>
-      case "pendente":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">⏳ Pendente</Badge>
+      case "Pending":
+        return (
+          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+            Pendente
+          </Badge>
+        )
+      case "Completed":
+        return (
+          <Badge variant="secondary" className="bg-green-100 text-green-800">
+            Concluída
+          </Badge>
+        )
+      case "InProgress":
+        return (
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            Em Andamento
+          </Badge>
+        )
+      case "Em Andamento":
+        return (
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            Em Andamento
+          </Badge>
+        )
       default:
         return <Badge variant="secondary">Desconhecido</Badge>
     }
@@ -175,10 +194,6 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
               <Button variant="ghost" size="sm" onClick={onBack}>
                 Voltar à Lista
               </Button>
-              <div className="flex items-center space-x-2">
-                <FileText className="h-5 w-5 text-red-600" />
-                <span className="font-semibold text-slate-900">Sistema de Inspeções</span>
-              </div>
             </div>
           </div>
         </div>
@@ -194,61 +209,7 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
             <p className="text-slate-600">Relatório completo da inspeção realizada</p>
           </div>
 
-          {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <FileText className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-slate-900">{items.length}</p>
-                    <p className="text-sm text-slate-600">Total de Itens</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-slate-900">{stats.aprovados}</p>
-                    <p className="text-sm text-slate-600">Aprovados</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <FileText className="h-4 w-4 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-slate-900">{stats.pendentes}</p>
-                    <p className="text-sm text-slate-600">Pendentes</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <FileText className="h-4 w-4 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-slate-900">{stats.reprovados}</p>
-                    <p className="text-sm text-slate-600">Reprovados</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div> */}
-
+ 
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -260,21 +221,21 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-slate-600">Cliente</p>
-                  <p className="font-semibold text-slate-900">{inspection?.cliente}</p>
+                  <p className="font-semibold text-slate-900">{inspection?.client}</p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-600">Responsável</p>
-                  <p className="font-semibold text-slate-900">{inspection?.responsavel}</p>
+                  <p className="font-semibold text-slate-900">{inspection?.responsible}</p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-600">Data</p>
                   <p className="font-semibold text-slate-900">
-                    {inspection?.data ? new Date(inspection.data).toLocaleDateString("pt-BR") : "N/A"}
+                    {inspection?.inspectionDate ? new Date(inspection.inspectionDate).toLocaleDateString("pt-BR") : "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-slate-600">Status</p>
-                  <Badge className="bg-green-100 text-green-800 border-green-200">✅ Concluída</Badge>
+                  <Badge className="bg-green-100 text-green-800 border-green-200">{getStatusBadge(inspection?.result ?? "desconhecido")}</Badge>
                 </div>
               </div>
             </CardContent>
@@ -282,30 +243,9 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
 
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                {/* <span className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-red-600" />
-                  Itens Inspecionados ({items.length})
-                </span> */}
+              <CardTitle className="flex items-center justify-center">
+
                 <div className="flex gap-2">
-                  {/* <Button
-                    onClick={handlePreviewPDF}
-                    disabled={previewingPDF}
-                    variant="outline"
-                    className="border-red-200 text-red-700 hover:bg-red-50 bg-transparent"
-                  >
-                    {previewingPDF ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-600 border-t-transparent mr-2" />
-                        Abrindo...
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="h-4 w-4 mr-2" />
-                        Visualizar PDF
-                      </>
-                    )}
-                  </Button> */}
                   <Button
                     onClick={async () => {
                       setGeneratingPDF(true)
@@ -353,73 +293,6 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
               </CardTitle>
               {/* <CardDescription>Resumo de todos os itens inspecionados</CardDescription> */}
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {items.map((item, index) => (
-                  <Card key={item.id} className="border border-slate-200 hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                            <span className="text-red-600 font-bold text-sm">{index + 1}</span>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-lg text-slate-900">Item {index + 1}</h3>
-                            <p className="text-sm text-slate-600">
-                              Criado em {new Date(item.createdAt).toLocaleDateString("pt-BR")}
-                            </p>
-                          </div>
-                        </div>
-                        {getStatusBadge(item.step5Data?.statusFinal)}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-slate-600 font-medium">Marca do Duto</p>
-                          <p className="font-semibold text-slate-900">{item.step1Data?.marcaDutoFlexivel || "N/A"}</p>
-                        </div>
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-slate-600 font-medium">Marca da União</p>
-                          <p className="font-semibold text-slate-900">{item.step1Data?.marcaUniao || "N/A"}</p>
-                        </div>
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-slate-600 font-medium">Diâmetro</p>
-                          <p className="font-semibold text-slate-900">{item.step1Data?.diametro || "N/A"}mm</p>
-                        </div>
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-slate-600 font-medium">Comprimento</p>
-                          <p className="font-semibold text-slate-900">{item.step1Data?.comprimentoNominal || "N/A"}m</p>
-                        </div>
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-slate-600 font-medium">Local de Instalação</p>
-                          <p className="font-semibold text-slate-900">{item.step2Data?.localInstalacao || "N/A"}</p>
-                        </div>
-                        <div className="bg-slate-50 p-3 rounded-lg">
-                          <p className="text-slate-600 font-medium">Tipo de Instalação</p>
-                          <p className="font-semibold text-slate-900 capitalize">
-                            {item.step2Data?.tipoInstalacao || "N/A"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {item.step5Data?.observacoesFinais && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <p className="text-blue-900 font-medium text-sm mb-1">Observações Finais</p>
-                          <p className="text-blue-800 text-sm leading-relaxed">{item.step5Data.observacoesFinais}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-
-                {items.length === 0 && (
-                  <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                    <p className="text-slate-500">Nenhum item encontrado para esta inspeção</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
           </Card>
         </div>
       </main>

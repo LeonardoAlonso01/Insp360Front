@@ -6,13 +6,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/a
 // Tipos para as requisições
 export interface Inspection {
   id: string
-  cliente: string // Corresponde a 'client' na API
-  responsavel: string // Corresponde a 'responsible' na API
-  data: string // Corresponde a 'inspectionDate' na API
-  result: string
-  observacoes?: string // Não vem na listagem, será padrão
-  createdAt?: string
-  updatedAt?: string
+  client: string // Corresponde a 'client' na API
+  responsible: string // Corresponde a 'responsible' na API
+  inspectionDate: string // Corresponde a 'inspectionDate' na API
+  result: string 
 }
 
 export interface CreateInspectionResponse {
@@ -185,7 +182,7 @@ class ApiClient {
   async getInspection(id: string): Promise<Inspection> {
     // Este endpoint pode precisar de ajuste se o formato de retorno for diferente
     // Por enquanto, assume-se que retorna o formato 'Inspection' completo
-    return this.request<Inspection>(`/inspections/${id}`)
+    return this.request<Inspection>(`/inspection/${id}`)
   }
 
   // Novo método para criar inspeção principal com o formato da API
