@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Step5Data } from "@/types/inspection-steps"
 import { apiClient } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { SearchSelect } from "../ui/search-select"
+import { OPTIONS_APROVADO_CONDENADO, OPTIONS_APROVADO_REPROVADO, OPTIONS_SIM_NAO } from "@/lib/form-options"
 
 interface Step5FormProps {
   inspectionId: string
@@ -101,109 +103,115 @@ export function Step5Form({ inspectionId, initialData, onAddNewItem, onFinalize,
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           {/* Campo Substituições de Anéis */}
           <div className="space-y-2">
+
             <Label htmlFor="substituicoesAneis" className="text-sm font-medium flex items-center">
               Substituições de Anéis
               <Badge variant="destructive" className="ml-2 text-xs">
                 Obrigatório
               </Badge>
             </Label>
-            <Select
+
+            <SearchSelect
+              options={OPTIONS_SIM_NAO.map((opt) => ({
+                label: opt.label,
+                value: opt.value,
+              }))}
               value={formData.substituicoesAneis}
               onValueChange={(value) => handleSelectChange("substituicoesAneis", value)}
-              required
-            >
-              <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="S">Sim</SelectItem>
-                <SelectItem value="N">Não</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Selecione"
+              className="h-11"
+            />
           </div>
 
           {/* Campo Novo Ensaio Hidrostático */}
           <div className="space-y-2">
+
             <Label htmlFor="novoEnsaioHidrostatico" className="text-sm font-medium flex items-center">
               Novo Ensaio Hidrostático
               <Badge variant="destructive" className="ml-2 text-xs">
                 Obrigatório
               </Badge>
             </Label>
-            <Select
+
+            <SearchSelect
+              options={OPTIONS_APROVADO_REPROVADO.map((opt) => ({
+                label: opt.label,
+                value: opt.value,
+              }))}
               value={formData.novoEnsaioHidrostatico}
               onValueChange={(value) => handleSelectChange("novoEnsaioHidrostatico", value)}
-              required
-            >
-              <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
-                <SelectValue placeholder="Selecione o status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="A">Aprovado</SelectItem>
-                <SelectItem value="R">Reprovado</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Selecione"
+              className="h-11"
+            />
           </div>
 
           {/* Campo Secagem */}
           <div className="space-y-2">
+
             <Label htmlFor="secagem" className="text-sm font-medium flex items-center">
               Secagem
               <Badge variant="destructive" className="ml-2 text-xs">
                 Obrigatório
               </Badge>
             </Label>
-            <Select value={formData.secagem} onValueChange={(value) => handleSelectChange("secagem", value)} required>
-              <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="S">Sim</SelectItem>
-                <SelectItem value="N">Não</SelectItem>
-              </SelectContent>
-            </Select>
+
+            <SearchSelect
+              options={OPTIONS_SIM_NAO.map((opt) => ({
+                label: opt.label,
+                value: opt.value,
+              }))}
+              value={formData.secagem}
+              onValueChange={(value) => handleSelectChange("secagem", value)}
+              placeholder="Selecione"
+              className="h-11"
+            />
+
           </div>
 
           {/* Campo Limpeza */}
           <div className="space-y-2">
+
             <Label htmlFor="limpeza" className="text-sm font-medium flex items-center">
               Limpeza
               <Badge variant="destructive" className="ml-2 text-xs">
                 Obrigatório
               </Badge>
             </Label>
-            <Select value={formData.limpeza} onValueChange={(value) => handleSelectChange("limpeza", value)} required>
-              <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="S">Sim</SelectItem>
-                <SelectItem value="N">Não</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            <SearchSelect
+              options={OPTIONS_SIM_NAO.map((opt) => ({
+                label: opt.label,
+                value: opt.value,
+              }))}
+              value={formData.limpeza}
+              onValueChange={(value) => handleSelectChange("limpeza", value)}
+              placeholder="Selecione"
+              className="h-11"
+            />
+
           </div>
 
           {/* Campo Resultado Final */}
           <div className="space-y-2">
+
             <Label htmlFor="resultadoFinal" className="text-sm font-medium flex items-center">
               Resultado Final
               <Badge variant="destructive" className="ml-2 text-xs">
                 Obrigatório
               </Badge>
             </Label>
-            <Select
+
+            <SearchSelect
+              options={OPTIONS_APROVADO_CONDENADO.map((opt) => ({
+                label: opt.label,
+                value: opt.value,
+              }))}
               value={formData.resultadoFinal}
               onValueChange={(value) => handleSelectChange("resultadoFinal", value)}
-              required
-            >
-              <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
-                <SelectValue placeholder="Selecione o resultado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="A">Aprovado</SelectItem>
-                <SelectItem value="C">Condenado</SelectItem>
-              </SelectContent>
-            </Select>
+              placeholder="Selecione"
+              className="h-11"
+            />
+            
           </div>
 
           {/* Campo Observações Finais */}
