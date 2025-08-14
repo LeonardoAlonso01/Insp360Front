@@ -319,10 +319,10 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
                           <TableRow key={inspection.id} className="hover:bg-slate-50/50">
                             <TableCell className="font-medium">
                               <div>
-                                <p className="font-semibold text-slate-900">{inspection.cliente}</p>
-                                {inspection.observacoes && (
+                                <p className="font-semibold text-slate-900">{inspection.client}</p>
+                                {/* {inspection.o && (
                                   <p className="text-sm text-slate-500 truncate max-w-xs">{inspection.observacoes}</p>
-                                )}
+                                )} */}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -330,11 +330,11 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
                                 <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
                                   <User className="h-4 w-4 text-slate-600" />
                                 </div>
-                                <span className="font-medium text-slate-700">{inspection.responsavel}</span>
+                                <span className="font-medium text-slate-700">{inspection.responsible}</span>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className="text-slate-600">{formatDate(inspection.data)}</span>
+                              <span className="text-slate-600">{formatDate(inspection.inspectionDate)}</span>
                             </TableCell>
                             <TableCell>{getStatusBadge(inspection.result)}</TableCell>
                             <TableCell>
@@ -354,7 +354,7 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
                                   variant="ghost"
                                   size="sm"
                                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                                  onClick={() => handleDelete(inspection.id, inspection.cliente)}
+                                  onClick={() => handleDelete(inspection.id, inspection.client)}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -384,10 +384,10 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-slate-900 text-lg leading-tight">{inspection.cliente}</h3>
+                            <h3 className="font-semibold text-slate-900 text-lg leading-tight">{inspection.client}</h3>
                             <div className="flex items-center space-x-2 mt-2">
                               <User className="h-4 w-4 text-slate-500" />
-                              <span className="text-slate-600 text-sm">{inspection.responsavel}</span>
+                              <span className="text-slate-600 text-sm">{inspection.responsible}</span>
                             </div>
                           </div>
                           <DropdownMenu>
@@ -419,16 +419,16 @@ export default function InspectionList({ onCreateNew, onEdit, onShowProfile }: I
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-4 w-4 text-slate-500" />
-                            <span className="text-sm text-slate-600">{formatDate(inspection.data)}</span>
+                            <span className="text-sm text-slate-600">{formatDate(inspection.inspectionDate)}</span>
                           </div>
                           {getStatusBadge(inspection.result)}
                         </div>
 
-                        {inspection.observacoes && (
+                        {/* {inspection.observacoes && (
                           <div className="mt-3 pt-3 border-t border-slate-100">
                             <p className="text-sm text-slate-600 line-clamp-2">{inspection.observacoes}</p>
                           </div>
-                        )}
+                        )} */}
                       </CardContent>
                     </Card>
                   ))

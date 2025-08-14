@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useLocalStorage } from "./use-local-storage"
 import { apiClient } from "@/lib/api"
 import type { Inspection, InspectionItem } from "@/lib/api"
+import { authService } from "@/lib/auth"
 
 interface OfflineData {
   inspections: Inspection[]
@@ -58,9 +59,11 @@ export function useOfflineSync() {
       for (const inspection of offlineData.pendingSync.inspections) {
         try {
           await apiClient.createInspection({
-            cliente: inspection.cliente,
-            responsavel: inspection.responsavel,
-            observacoes: inspection.observacoes,
+            client: inspection.client,
+            responsible: inspection.responsible,
+            obs: "",
+            result: "Aprovado",
+            companyId: authService.getCompanyId() || "",
           })
         } catch (error) {
           console.error("Erro ao sincronizar inspeção:", error)

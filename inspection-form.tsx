@@ -26,9 +26,9 @@ interface InspectionFormProps {
 export default function InspectionForm({ onBack, onInspectionCreated, editingInspection }: InspectionFormProps) {
   const { user } = useAuth()
   const [formData, setFormData] = useState({
-    cliente: editingInspection?.cliente || "",
-    responsavel: editingInspection?.responsavel || "",
-    observacoes: editingInspection?.observacoes || "",
+    cliente: editingInspection?.client || "",
+    responsavel: editingInspection?.responsible || "",
+    observacoes: "",
   })
 
   // Atualiza o campo responsavel sempre que o usuário logado mudar

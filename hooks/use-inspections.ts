@@ -46,11 +46,10 @@ export function useInspections(options?: UseInspectionsOptions) {
       // Mapear ApiInspectionListItem para Inspection
       const mappedInspections: Inspection[] = apiResponse.map((apiInsp: ApiInspectionListItem) => ({
         id: apiInsp.id,
-        cliente: apiInsp.client,
-        responsavel: apiInsp.responsible,
-        data: apiInsp.inspectionDate,
-        result: apiInsp.result, // Status padrão, pois não vem na listagem
-        observacoes: "", // Observações padrão, pois não vem na listagem
+        client: apiInsp.client,
+        responsible: apiInsp.responsible,
+        inspectionDate: apiInsp.inspectionDate,
+        result: apiInsp.result,
       }))
 
       setInspections(mappedInspections)
