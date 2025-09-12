@@ -442,6 +442,14 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                                     <FileText className="h-4 w-4" />
                                   )}
                                 </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => onEdit?.(inspection)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>

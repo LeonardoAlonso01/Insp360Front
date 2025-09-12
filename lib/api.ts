@@ -220,6 +220,8 @@ class ApiClient {
 
   async updateInspection(id: string, data: UpdateInspectionRequest): Promise<Inspection> {
     // Assumindo que o backend ainda espera 'cliente', 'responsavel', 'status'
+    console.log(`[API] updateInspection - Atualizando inspeção: ${id}`)
+    console.log(`[API] updateInspection - Body sendo enviado:`, JSON.stringify(data, null, 2))
     return this.request<Inspection>(`/inspections/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
@@ -317,11 +319,62 @@ class ApiClient {
 
   // Buscar todos os itens de uma inspeção
   async getInspectionItems(inspectionId: string): Promise<InspectionItem[]> {
-    return this.request(`/inspections/${inspectionId}/items`)
+    console.log(`[API] getInspectionItems - Buscando itens para inspeção: ${inspectionId}`)
+    const result = await this.request<InspectionItem[]>(`/inspection/items/${inspectionId}`)
+    console.log(`[API] getInspectionItems - Resultado:`, result)
+    return result
+  }
+
+  // Atualizar um item de inspeção (ajuste a rota conforme seu backend)
+  async updateInspectionItem(itemId: string, data: Partial<InspectionItem>): Promise<void> {
+    console.log(`[API] updateInspectionItem - Atualizando item: ${itemId}`)
+    console.log(`[API] updateInspectionItem - Body sendo enviado:`, JSON.stringify(data, null, 2))
+    await this.request<void>(`/inspection/item/${itemId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  // Salvar/atualizar item com o contrato exato do backend (PUT /api/inspection/item/update)
+  async saveInspectionItem(payload: {
+    inspectionId: string
+    item: string
+    pipeBrand?: string
+    unionBrand?: string
+    diameter?: string
+    nominalLength?: string
+    type?: number
+    manufactureYear?: string | null
+    testPressure?: string
+    nextInspectionDate?: string | null
+    nextMaintenanceDate?: string | null
+    actualLength?: string
+    coatingShell?: string
+    unions?: string
+    sleeveLength?: string
+    rubberSealing?: string
+    marking?: string
+    hydrostaticTest?: string
+    rewelding?: string
+    finalLength?: string
+    unionReplacement?: string
+    sealingReplacement?: string
+    ringReplacements?: string
+    newHydrostaticTest?: string
+    cleaning?: string
+    drying?: string
+    finalResult?: string
+  }): Promise<void> {
+    console.log(`[API] saveInspectionItem - Salvando item de inspeção`)
+    console.log(`[API] saveInspectionItem - Body sendo enviado:`, JSON.stringify(payload, null, 2))
+    await this.request<void>(`/inspection/item/update`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    })
   }
 
   // NOVO: Método para finalizar um ITEM da inspeção
-  async finalizeInspectionItem(inspectionId: string): Promise<void> {
+  async finalizeInspectionItem(inspectionId: string): Promise<string> {
     // Validação simples de GUID (UUID v4)
     const guidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!inspectionId || !guidRegex.test(inspectionId)) {
@@ -332,7 +385,7 @@ class ApiClient {
       idInspection: inspectionId,
     }
     console.log("Finalizando item de inspeção:", requestBody)
-    return this.request<void>(`/Inspection/item`, {
+    return this.request<string>(`/Inspection/item`, {
       method: "POST",
       body: JSON.stringify(requestBody),
     })
@@ -393,6 +446,20 @@ class ApiClient {
   async completeInspection(inspectionId: string): Promise<void> {
     return this.request<void>(`/inspection/complete/${inspectionId}`, {
       method: "PUT",
+    })
+  }
+
+  // Copiar item de inspeção
+  async copyInspectionItem(inspectionId: string, itemId: string, copies: number): Promise<{ item: string }> {
+    const requestBody = {
+      id: itemId,
+      numberOfCopies: copies,
+    }
+    
+    console.log("Copiando item de inspeção:", requestBody)
+    return this.request<{ item: string }>(`/inspection/item/copyitem`, {
+      method: "POST",
+      body: JSON.stringify(requestBody),
     })
   }
 }

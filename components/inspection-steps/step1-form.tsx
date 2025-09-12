@@ -40,8 +40,8 @@ export function Step1Form({ inspectionId, initialData, onNext, onBack, loading }
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
-      marcaDutoFlexivel: "SuperFlex",
-      marcaUniao: "CTX",
+      marcaDutoFlexivel: initialData?.marcaDutoFlexivel || "",
+      marcaUniao: initialData?.marcaUniao || "",
       diametro: initialData?.diametro || "",
       comprimentoNominal: initialData?.comprimentoNominal || "",
     }))

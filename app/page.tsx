@@ -7,15 +7,18 @@ import InspectionListEnhanced from "../inspection-list-enhanced"
 import InspectionForm from "../inspection-form"
 import InspectionSteps from "../inspection-steps"
 import InspectionFinalization from "../components/inspection-finalization"
+import { InspectionItemsList } from "../components/inspection-items-list"
+import { InspectionItemEditor } from "../components/inspection-item-editor"
 import UserProfile from "../user-profile"
-import type { Inspection } from "@/lib/api"
+import type { Inspection, InspectionItem } from "@/lib/api"
 
-type ViewType = "login" | "list" | "form" | "steps" | "finalization" | "profile"
+type ViewType = "login" | "list" | "form" | "steps" | "finalization" | "profile" | "items-list" | "item-editor"
 
 export default function Page() {
   const [currentView, setCurrentView] = useState<ViewType>("login")
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null)
   const [currentInspectionId, setCurrentInspectionId] = useState<string | null>(null)
+  const [currentItem, setCurrentItem] = useState<InspectionItem | null>(null)
 
   const { isAuthenticated, loading } = useAuth()
 
@@ -40,7 +43,8 @@ export default function Page() {
 
   const handleEdit = (inspection: Inspection) => {
     setEditingInspection(inspection)
-    setCurrentView("form")
+    setCurrentInspectionId(inspection.id)
+    setCurrentView("items-list")
   }
 
   const handleInspectionCreated = (inspectionId: string) => {
@@ -56,7 +60,18 @@ export default function Page() {
   const handleBackToList = () => {
     setEditingInspection(null)
     setCurrentInspectionId(null)
+    setCurrentItem(null)
     setCurrentView("list")
+  }
+
+  const handleBackToItemsList = () => {
+    setCurrentItem(null)
+    setCurrentView("items-list")
+  }
+
+  const handleEditItem = (item: InspectionItem) => {
+    setCurrentItem(item)
+    setCurrentView("item-editor")
   }
 
   const handleShowProfile = () => {
@@ -98,6 +113,22 @@ export default function Page() {
         <InspectionFinalization inspectionId={currentInspectionId} onBack={handleBackToList} />
       )}
       {currentView === "profile" && <UserProfile onBack={handleBackToList} />}
+      {currentView === "items-list" && currentInspectionId && editingInspection && (
+        <InspectionItemsList
+          inspectionId={currentInspectionId}
+          inspectionData={editingInspection}
+          onBack={handleBackToList}
+          onEditItem={handleEditItem}
+        />
+      )}
+      {currentView === "item-editor" && currentInspectionId && currentItem && (
+        <InspectionItemEditor
+          inspectionId={currentInspectionId}
+          item={currentItem}
+          onBack={handleBackToItemsList}
+          onSave={handleBackToItemsList}
+        />
+      )}
     </>
   )
 }
