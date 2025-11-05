@@ -21,13 +21,14 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Toast } from "@/components/ui/toast"
-import { AdvancedSearch } from "@/components/advanced-search"
+import { AdvancedSearch } from "@/components/inspections/search"
 import { useInspections } from "@/hooks/use-inspections"
 import { useAdvancedSearch } from "@/hooks/use-advanced-search"
 import { useToast } from "@/hooks/use-toast"
 import type { Inspection } from "@/lib/api"
 import { useState, useEffect } from "react" // Importar useEffect
 import { useAuth } from "@/hooks/use-auth"
+import { formatDate, getStatusBadge } from "@/components/inspections/utils"
 
 interface InspectionListEnhancedProps {
   onCreateNew: () => void
@@ -103,41 +104,6 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
     }
   }
 
-  const getStatusBadge = (status: Inspection["result"]) => {
-    console.log("getStatusBadge called with status:", status)
-    switch (status) {
-      case "Pending":
-        return (
-          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-            Pendente
-          </Badge>
-        )
-      case "Completed":
-        return (
-          <Badge variant="secondary" className="bg-green-100 text-green-800">
-            Concluída
-          </Badge>
-        )
-      case "InProgress":
-        return (
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-            Em Andamento
-          </Badge>
-        )
-      case "Em Andamento":
-        return (
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-            Em Andamento
-          </Badge>
-        )
-      default:
-        return <Badge variant="secondary">Desconhecido</Badge>
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("pt-BR")
-  }
 
   const handleLogout = () => {
     if (confirm("Tem certeza que deseja sair do sistema?")) {

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useLocalStorage } from "./use-local-storage"
-import type { AdvancedSearchFilters } from "@/components/advanced-search"
+import type { AdvancedSearchFilters } from "@/components/inspections/search"
 import type { Inspection } from "@/lib/api"
 
 interface UseAdvancedSearchOptions {
@@ -28,27 +28,26 @@ export function useAdvancedSearch({ inspections, initialFilters }: UseAdvancedSe
   // Filtrar inspeções baseado nos filtros
   const filteredInspections = useMemo(() => {
     return inspections.filter((inspection) => {
-      // Busca geral (cliente, responsável, observações)
+      // Busca geral (cliente, responsável)
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase()
         const matchesGeneral =
-          inspection.cliente.toLowerCase().includes(searchLower) ||
-          inspection.responsavel.toLowerCase().includes(searchLower) ||
-          (inspection.observacoes && inspection.observacoes.toLowerCase().includes(searchLower))
+          inspection.client.toLowerCase().includes(searchLower) ||
+          inspection.responsible.toLowerCase().includes(searchLower)
 
         if (!matchesGeneral) return false
       }
 
       // Filtro por cliente específico
       if (filters.cliente) {
-        if (!inspection.cliente.toLowerCase().includes(filters.cliente.toLowerCase())) {
+        if (!inspection.client.toLowerCase().includes(filters.cliente.toLowerCase())) {
           return false
         }
       }
 
       // Filtro por responsável específico
       if (filters.responsavel) {
-        if (inspection.responsavel !== filters.responsavel) {
+        if (inspection.responsible !== filters.responsavel) {
           return false
         }
       }
@@ -62,7 +61,7 @@ export function useAdvancedSearch({ inspections, initialFilters }: UseAdvancedSe
 
       // Filtro por data
       if (filters.dataInicio || filters.dataFim) {
-        const inspectionDate = new Date(inspection.data)
+        const inspectionDate = new Date(inspection.inspectionDate)
 
         if (filters.dataInicio) {
           const startDate = new Date(filters.dataInicio)
@@ -76,23 +75,7 @@ export function useAdvancedSearch({ inspections, initialFilters }: UseAdvancedSe
         }
       }
 
-      // Filtro por observações específicas
-      if (filters.observacoes) {
-        if (
-          !inspection.observacoes ||
-          !inspection.observacoes.toLowerCase().includes(filters.observacoes.toLowerCase())
-        ) {
-          return false
-        }
-      }
-
-      // Filtro por presença de observações
-      if (filters.hasObservacoes !== null) {
-        const hasObs = Boolean(inspection.observacoes && inspection.observacoes.trim())
-        if (filters.hasObservacoes !== hasObs) {
-          return false
-        }
-      }
+      // Filtros de observações são ignorados pois a interface Inspection não possui esse campo
 
       return true
     })
@@ -116,8 +99,8 @@ export function useAdvancedSearch({ inspections, initialFilters }: UseAdvancedSe
 
   // Sugestões baseadas nos dados existentes
   const suggestions = useMemo(() => {
-    const clientes = [...new Set(inspections.map((i) => i.cliente))].slice(0, 10)
-    const responsaveis = [...new Set(inspections.map((i) => i.responsavel))].slice(0, 10)
+    const clientes = [...new Set(inspections.map((i) => i.client))].slice(0, 10)
+    const responsaveis = [...new Set(inspections.map((i) => i.responsible))].slice(0, 10)
 
     return {
       clientes,
@@ -178,11 +161,11 @@ export function useAdvancedSearch({ inspections, initialFilters }: UseAdvancedSe
   const exportResults = (format: "csv" | "json") => {
     const data = filteredInspections.map((inspection) => ({
       id: inspection.id,
-      cliente: inspection.cliente,
-      responsavel: inspection.responsavel,
-      data: inspection.data,
+      cliente: inspection.client,
+      responsavel: inspection.responsible,
+      data: inspection.inspectionDate,
       status: inspection.result,
-      observacoes: inspection.observacoes || "",
+      observacoes: "", // Observações não estão disponíveis na interface atual
     }))
 
     if (format === "csv") {

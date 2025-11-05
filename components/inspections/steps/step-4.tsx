@@ -8,27 +8,26 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Save, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import type { Step3Data } from "@/types/inspection-steps"
 import { SearchSelect } from "@/components/ui/search-select"
-import { OPTIONS_APROVADO_REPROVADO } from "@/lib/form-options"
+import type { Step4Data } from "@/types/inspection-steps"
+import { OPTIONS_APROVADO_REPROVADO, OPTIONS_SIM_NAO } from "@/lib/form-options"
 
-interface Step3FormProps {
+interface Step4FormProps {
   inspectionId: string
-  initialData: Partial<Step3Data>
-  onNext: (data: Step3Data) => void
+  initialData: Partial<Step4Data>
+  onNext: (data: Step4Data) => void
   onBack: () => void
   loading: boolean
 }
 
-export function Step3Form({ inspectionId, initialData, onNext, onBack, loading }: Step3FormProps) {
-  const [formData, setFormData] = useState<Step3Data>({
+export function Step4Form({ inspectionId, initialData, onNext, onBack, loading }: Step4FormProps) {
+  const [formData, setFormData] = useState<Step4Data>({
     idInspection: inspectionId,
-    comprimentoReal: "",
-    carcacaRevestimento: "Aprovado", // Default value
-    unioes: "Aprovado", // Default value
-    compLuvaEmpatamento: "",
-    vedacaoBorracha: "Aprovado", // Default value
-    marcacao: "Aprovado", // Default value
+    ensaioHidrostatico: "Aprovado", // Default value
+    reempatacao: "Não", // Default value
+    comprimentoFinal: "",
+    substituicaoUnioes: "Não", // Default value
+    substituicaoVedacoes: "Não", // Default value
     ...initialData,
   })
 
@@ -40,11 +39,11 @@ export function Step3Form({ inspectionId, initialData, onNext, onBack, loading }
     const { id, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [id]: id === "comprimentoReal" || id === "compLuvaEmpatamento" ? value || 0 : value,
+      [id]: id === "comprimentoFinal" ? value || 0 : value,
     }))
   }
 
-  const handleSelectChange = (id: keyof Step3Data, value: string) => {
+  const handleSelectChange = (id: keyof Step4Data, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [id]: value as any, // Type assertion for select values
@@ -57,137 +56,119 @@ export function Step3Form({ inspectionId, initialData, onNext, onBack, loading }
   }
 
   const isFormValid =
-    String(formData.comprimentoReal).trim() !== "" &&
-    String(formData.carcacaRevestimento).trim() !== "" &&
-    String(formData.unioes).trim() !== "" &&
-    String(formData.compLuvaEmpatamento).trim() !== "" &&
-    String(formData.vedacaoBorracha).trim() !== "" &&
-    String(formData.marcacao).trim() !== ""
+    String(formData.ensaioHidrostatico).trim() !== "" &&
+    String(formData.reempatacao).trim() !== "" &&
+    String(formData.comprimentoFinal).trim() !== "" &&
+    String(formData.substituicaoUnioes).trim() !== "" &&
+    String(formData.substituicaoVedacoes).trim() !== ""
 
   return (
     <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm mx-2 sm:mx-0">
       <CardHeader className="space-y-1 pb-4 sm:pb-6">
-        <CardTitle className="text-lg sm:text-xl">Etapa 3: Inspeção Visual</CardTitle>
-        <CardDescription className="text-sm">Avalie visualmente o duto e suas condições.</CardDescription>
+        <CardTitle className="text-lg sm:text-xl">Etapa 4: Ensaio e Manutenção</CardTitle>
+        <CardDescription className="text-sm">
+          Registre os resultados dos ensaios e manutenções realizadas.
+        </CardDescription>
       </CardHeader>
       <CardContent className="px-4 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
-          {/* Campo Comprimento Real */}
+          {/* Ensaio Hidrostático */}
           <div className="space-y-2">
-            <Label htmlFor="comprimentoReal" className="text-sm font-medium flex items-center">
-              Comprimento Real (m)
+            <Label htmlFor="ensaioHidrostatico" className="text-sm font-medium flex items-center">
+              Ensaio Hidrostático
+              <Badge variant="destructive" className="ml-2 text-xs">
+                Obrigatório
+              </Badge>
+            </Label>
+            <SearchSelect
+              options={OPTIONS_APROVADO_REPROVADO.map((opt) => ({
+                label: opt.label,
+                value: opt.value,
+              }))}
+              value={formData.ensaioHidrostatico}
+              onValueChange={(value) => handleSelectChange("ensaioHidrostatico", value)}
+              placeholder="Selecione o status"
+              className="h-11"
+            />
+          </div>
+
+          {/* Reempatamento */}
+          <div className="space-y-2">
+            <Label htmlFor="reempatacao" className="text-sm font-medium flex items-center">
+              Reempatamento
+              <Badge variant="destructive" className="ml-2 text-xs">
+                Obrigatório
+              </Badge>
+            </Label>
+            <SearchSelect
+              options={OPTIONS_SIM_NAO.map((opt) => ({
+                label: opt.label,
+                value: opt.value,
+              }))}
+              value={formData.reempatacao}
+              onValueChange={(value) => handleSelectChange("reempatacao", value)}
+              placeholder="Selecione"
+              className="h-11"
+            />
+          </div>
+
+          {/* Campo Comprimento Final */}
+          <div className="space-y-2">
+            <Label htmlFor="comprimentoFinal" className="text-sm font-medium flex items-center">
+              Comprimento Final (m)
               <Badge variant="destructive" className="ml-2 text-xs">
                 Obrigatório
               </Badge>
             </Label>
             <Input
-              id="comprimentoReal"
+              id="comprimentoFinal"
               type="number"
+              inputMode="decimal"
               step="0.1"
-              placeholder="Ex: 9.8"
-              value={formData.comprimentoReal === "" ? "" : formData.comprimentoReal}
+              placeholder="Ex: 9.5"
+              value={formData.comprimentoFinal === "" ? "" : formData.comprimentoFinal}
               onChange={handleChange}
               className="h-12 sm:h-11 transition-all duration-200 focus:ring-2 focus:ring-red-500/20 text-base sm:text-sm"
               required
             />
           </div>
 
-          {/* Campo Carcaça/Revestimento */}
+          {/* Substituição de Uniões */}
           <div className="space-y-2">
-            <Label htmlFor="carcacaRevestimento" className="text-sm font-medium flex items-center">
-              Carcaça/Revestimento
+            <Label htmlFor="substituicaoUnioes" className="text-sm font-medium flex items-center">
+              Substituição de Uniões
               <Badge variant="destructive" className="ml-2 text-xs">
                 Obrigatório
               </Badge>
             </Label>
             <SearchSelect
-              options={OPTIONS_APROVADO_REPROVADO.map((opt) => ({
+              options={OPTIONS_SIM_NAO.map((opt) => ({
                 label: opt.label,
                 value: opt.value,
               }))}
-              value={formData.carcacaRevestimento}
-              onValueChange={(value) => handleSelectChange("carcacaRevestimento", value)}
-              placeholder="Selecione o status"
+              value={formData.substituicaoUnioes}
+              onValueChange={(value) => handleSelectChange("substituicaoUnioes", value)}
+              placeholder="Selecione"
               className="h-11"
             />
           </div>
 
-          {/* Campo Uniões */}
+          {/* Substituição de Vedações */}
           <div className="space-y-2">
-            <Label htmlFor="unioes" className="text-sm font-medium flex items-center">
-              Uniões
+            <Label htmlFor="substituicaoVedacoes" className="text-sm font-medium flex items-center">
+              Substituição de Vedações
               <Badge variant="destructive" className="ml-2 text-xs">
                 Obrigatório
               </Badge>
             </Label>
             <SearchSelect
-              options={OPTIONS_APROVADO_REPROVADO.map((opt) => ({
+              options={OPTIONS_SIM_NAO.map((opt) => ({
                 label: opt.label,
                 value: opt.value,
               }))}
-              value={formData.unioes}
-              onValueChange={(value) => handleSelectChange("unioes", value)}
-              placeholder="Selecione o status"
-              className="h-11"
-            />
-          </div>
-
-          {/* Campo Comp. Luva Empatamento */}
-          <div className="space-y-2">
-            <Label htmlFor="compLuvaEmpatamento" className="text-sm font-medium flex items-center">
-              Comp. Luva Empatamento (m)
-              <Badge variant="destructive" className="ml-2 text-xs">
-                Obrigatório
-              </Badge>
-            </Label>
-            <Input
-              id="compLuvaEmpatamento"
-              type="number"
-              step="0.1"
-              placeholder="Ex: 1.2"
-              value={formData.compLuvaEmpatamento === "" ? "" : formData.compLuvaEmpatamento}
-              onChange={handleChange}
-              className="h-12 sm:h-11 transition-all duration-200 focus:ring-2 focus:ring-red-500/20 text-base sm:text-sm"
-              required
-            />
-          </div>
-
-          {/* Campo Vedação Borracha */}
-          <div className="space-y-2">
-            <Label htmlFor="vedacaoBorracha" className="text-sm font-medium flex items-center">
-              Vedação Borracha
-              <Badge variant="destructive" className="ml-2 text-xs">
-                Obrigatório
-              </Badge>
-            </Label>
-            <SearchSelect
-              options={OPTIONS_APROVADO_REPROVADO.map((opt) => ({
-                label: opt.label,
-                value: opt.value,
-              }))}
-              value={formData.vedacaoBorracha}
-              onValueChange={(value) => handleSelectChange("vedacaoBorracha", value)}
-              placeholder="Selecione o status"
-              className="h-11"
-            />
-          </div>
-
-          {/* Campo Marcação */}
-          <div className="space-y-2">
-            <Label htmlFor="marcacao" className="text-sm font-medium flex items-center">
-              Marcação
-              <Badge variant="destructive" className="ml-2 text-xs">
-                Obrigatório
-              </Badge>
-            </Label>
-            <SearchSelect
-              options={OPTIONS_APROVADO_REPROVADO.map((opt) => ({
-                label: opt.label,
-                value: opt.value,
-              }))}
-              value={formData.marcacao}
-              onValueChange={(value) => handleSelectChange("marcacao", value)}
-              placeholder="Selecione o status"
+              value={formData.substituicaoVedacoes}
+              onValueChange={(value) => handleSelectChange("substituicaoVedacoes", value)}
+              placeholder="Selecione"
               className="h-11"
             />
           </div>

@@ -12,10 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Step5Data } from "@/types/inspection-steps"
 import { apiClient } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
-import { SearchSelect } from "../ui/search-select"
+import { SearchSelect } from "@/components/ui/search-select"
 import { OPTIONS_APROVADO_CONDENADO, OPTIONS_APROVADO_REPROVADO, OPTIONS_SIM_NAO } from "@/lib/form-options"
-import { CopyItemModal } from "../ui/copy-item-modal"
-import { PostCopyModal } from "../ui/post-copy-modal"
+import { CopyItemModal } from "@/components/ui/copy-item-modal"
+import { PostCopyModal } from "@/components/ui/post-copy-modal"
 
 interface Step5FormProps {
   inspectionId: string

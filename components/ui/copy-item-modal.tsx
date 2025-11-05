@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,14 +32,14 @@ export function CopyItemModal({ isOpen, onClose, onCopy, loading = false }: Copy
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Copy className="h-5 w-5" />
             Copiar Item
           </DialogTitle>
           <DialogDescription>
-            O item atual será salvo e depois serão criadas as cópias solicitadas.
+            O item será salvo e copiado.
           </DialogDescription>
         </DialogHeader>
         
@@ -59,36 +59,36 @@ export function CopyItemModal({ isOpen, onClose, onCopy, loading = false }: Copy
               Mínimo: 1, Máximo: 10
             </p>
           </div>
-        </div>
 
-        <DialogFooter className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleCopy}
-            disabled={loading || copies < 1}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Copiando...
-              </>
-            ) : (
-              <>
-                <Copy className="h-4 w-4 mr-2" />
-                Copiar Item
-              </>
-            )}
-          </Button>
-        </DialogFooter>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={handleCopy}
+              disabled={loading || copies < 1}
+              className="w-full bg-red-600 hover:bg-red-700"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Copiando...
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copiar Item
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              disabled={loading}
+              className="w-full"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )
 }
-

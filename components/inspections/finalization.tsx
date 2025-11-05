@@ -4,12 +4,11 @@ import { useState, useEffect } from "react"
 import { Download, FileText, CheckCircle, Building2, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Toast } from "@/components/ui/toast"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient } from "@/lib/api"
-import { PDFGenerator } from "@/lib/pdf-generator"
 import type { InspectionItem, Inspection } from "@/lib/api"
+import { getStatusBadge } from "@/components/inspections/utils"
 
 interface InspectionFinalizationProps {
   inspectionId: string
@@ -51,108 +50,77 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
     }
   }
 
-  const handleGeneratePDF = async () => {
-    if (!inspection || items.length === 0) {
-      toast({
-        title: "Erro!",
-        description: "Dados da inspeção não disponíveis",
-        variant: "destructive",
-      })
-      return
-    }
+  // const handleGeneratePDF = async () => {
+  //   if (!inspection || items.length === 0) {
+  //     toast({
+  //       title: "Erro!",
+  //       description: "Dados da inspeção não disponíveis",
+  //       variant: "destructive",
+  //     })
+  //     return
+  //   }
 
-    setGeneratingPDF(true)
-    try {
-      await PDFGenerator.generateAndDownload({
-        inspection,
-        items,
-      })
+  //   setGeneratingPDF(true)
+  //   try {
+  //     await PDFGenerator.generateAndDownload({
+  //       inspection,
+  //       items,
+  //     })
 
-      toast({
-        title: "Sucesso!",
-        description: "PDF gerado e baixado com sucesso",
-        variant: "success",
-      })
-    } catch (error) {
-      console.error("PDF Generation Error:", error)
-      toast({
-        title: "Erro!",
-        description: "Não foi possível gerar o PDF",
-        variant: "destructive",
-      })
-    } finally {
-      setGeneratingPDF(false)
-    }
-  }
+  //     toast({
+  //       title: "Sucesso!",
+  //       description: "PDF gerado e baixado com sucesso",
+  //       variant: "success",
+  //     })
+  //   } catch (error) {
+  //     console.error("PDF Generation Error:", error)
+  //     toast({
+  //       title: "Erro!",
+  //       description: "Não foi possível gerar o PDF",
+  //       variant: "destructive",
+  //     })
+  //   } finally {
+  //     setGeneratingPDF(false)
+  //   }
+  // }
 
-  const handlePreviewPDF = async () => {
-    if (!inspection || items.length === 0) {
-      toast({
-        title: "Erro!",
-        description: "Dados da inspeção não disponíveis",
-        variant: "destructive",
-      })
-      return
-    }
+  // const handlePreviewPDF = async () => {
+  //   if (!inspection || items.length === 0) {
+  //     toast({
+  //       title: "Erro!",
+  //       description: "Dados da inspeção não disponíveis",
+  //       variant: "destructive",
+  //     })
+  //     return
+  //   }
 
-    setPreviewingPDF(true)
-    try {
-      const blob = await PDFGenerator.generateBlob({
-        inspection,
-        items,
-      })
+  //   setPreviewingPDF(true)
+  //   try {
+  //     const blob = await PDFGenerator.generateBlob({
+  //       inspection,
+  //       items,
+  //     })
 
-      const url = URL.createObjectURL(blob)
-      window.open(url, "_blank")
+  //     const url = URL.createObjectURL(blob)
+  //     window.open(url, "_blank")
 
-      toast({
-        title: "Sucesso!",
-        description: "PDF aberto para visualização",
-        variant: "success",
-      })
-    } catch (error) {
-      console.error("PDF Preview Error:", error)
-      toast({
-        title: "Erro!",
-        description: "Não foi possível visualizar o PDF",
-        variant: "destructive",
-      })
-    } finally {
-      setPreviewingPDF(false)
-    }
-  }
+  //     toast({
+  //       title: "Sucesso!",
+  //       description: "PDF aberto para visualização",
+  //       variant: "success",
+  //     })
+  //   } catch (error) {
+  //     console.error("PDF Preview Error:", error)
+  //     toast({
+  //       title: "Erro!",
+  //       description: "Não foi possível visualizar o PDF",
+  //       variant: "destructive",
+  //     })
+  //   } finally {
+  //     setPreviewingPDF(false)
+  //   }
+  // }
 
-const getStatusBadge = (status: Inspection["result"]) => {
-    console.log("getStatusBadge called with status:", status)
-    switch (status) {
-      case "Pending":
-        return (
-          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-            Pendente
-          </Badge>
-        )
-      case "Completed":
-        return (
-          <Badge variant="secondary" className="bg-green-100 text-green-800">
-            Concluída
-          </Badge>
-        )
-      case "InProgress":
-        return (
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-            Em Andamento
-          </Badge>
-        )
-      case "Em Andamento":
-        return (
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-            Em Andamento
-          </Badge>
-        )
-      default:
-        return <Badge variant="secondary">Desconhecido</Badge>
-    }
-  }
 
   const getStatusStats = () => {
     const aprovados = items.filter((item) => item.step5Data?.statusFinal === "aprovado").length
@@ -235,7 +203,7 @@ const getStatusBadge = (status: Inspection["result"]) => {
                 </div>
                 <div>
                   <p className="text-sm text-slate-600">Status</p>
-                  <Badge className="bg-green-100 text-green-800 border-green-200">{getStatusBadge(inspection?.result ?? "desconhecido")}</Badge>
+                  {getStatusBadge(inspection?.result)}
                 </div>
               </div>
             </CardContent>

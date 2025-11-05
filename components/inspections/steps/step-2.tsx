@@ -93,6 +93,7 @@ export function Step2Form({ inspectionId, initialData, onNext, onBack, loading }
             <Input
               id="pressaoEnsaio"
               type="text"
+              inputMode="decimal"
               placeholder="Ex: 10 bar"
               value={formData.pressaoEnsaio}
               onChange={handleChange}
