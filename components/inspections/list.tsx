@@ -455,41 +455,51 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                               <span className="text-slate-600 text-sm">{inspection.responsible}</span>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            disabled={downloadingPdfId === inspection.id}
-                            onClick={async () => {
-                              setDownloadingPdfId(inspection.id)
-                              try {
-                                const { apiClient } = await import("@/lib/api")
-                                const pdfBlob = await apiClient.generateInspectionReport(inspection.id)
-                                const url = window.URL.createObjectURL(pdfBlob)
-                                const link = document.createElement("a")
-                                link.href = url
-                                link.download = `inspecao_${inspection.id}.pdf`
-                                document.body.appendChild(link)
-                                link.click()
-                                link.remove()
-                                window.URL.revokeObjectURL(url)
-                              } catch (error) {
-                                toast({
-                                  title: "Erro ao baixar PDF",
-                                  description: "Não foi possível gerar o relatório PDF desta inspeção.",
-                                  variant: "destructive",
-                                })
-                              } finally {
-                                setDownloadingPdfId(null)
-                              }
-                            }}
-                          >
-                            {downloadingPdfId === inspection.id ? (
-                              <span className="animate-spin rounded-full h-4 w-4 border-2 border-slate-600 border-t-transparent inline-block"></span>
-                            ) : (
-                              <FileText className="h-4 w-4" />
-                            )}
-                          </Button>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              disabled={downloadingPdfId === inspection.id}
+                              onClick={async () => {
+                                setDownloadingPdfId(inspection.id)
+                                try {
+                                  const { apiClient } = await import("@/lib/api")
+                                  const pdfBlob = await apiClient.generateInspectionReport(inspection.id)
+                                  const url = window.URL.createObjectURL(pdfBlob)
+                                  const link = document.createElement("a")
+                                  link.href = url
+                                  link.download = `inspecao_${inspection.id}.pdf`
+                                  document.body.appendChild(link)
+                                  link.click()
+                                  link.remove()
+                                  window.URL.revokeObjectURL(url)
+                                } catch (error) {
+                                  toast({
+                                    title: "Erro ao baixar PDF",
+                                    description: "Não foi possível gerar o relatório PDF desta inspeção.",
+                                    variant: "destructive",
+                                  })
+                                } finally {
+                                  setDownloadingPdfId(null)
+                                }
+                              }}
+                            >
+                              {downloadingPdfId === inspection.id ? (
+                                <span className="animate-spin rounded-full h-4 w-4 border-2 border-slate-600 border-t-transparent inline-block"></span>
+                              ) : (
+                                <FileText className="h-4 w-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => onEdit?.(inspection)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
 
                         <div className="flex items-center justify-between">
