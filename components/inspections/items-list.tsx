@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, Edit, FileText, Calendar, User, Building2 } from "lucide-react"
+import { ArrowLeft, Edit, FileText, Calendar, User, Building2, Ruler } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -150,7 +150,7 @@ export function InspectionItemsList({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="font-semibold">ID do Item</TableHead>
+                        <TableHead className="font-semibold">Item</TableHead>
                         <TableHead className="font-semibold">Marca do Duto</TableHead>
                         <TableHead className="font-semibold">Diâmetro</TableHead>
                         <TableHead className="font-semibold">Resultado</TableHead>
@@ -171,10 +171,10 @@ export function InspectionItemsList({
                           </TableCell>
                         </TableRow>
                       ) : (
-                        items.map((item: any) => (
-                          <TableRow key={(item.item || item.id)} className="hover:bg-slate-50/50">
+                        items.map((item: any, index: number) => (
+                          <TableRow key={item.id ?? `${index}-item`} className="hover:bg-slate-50/50">
                             <TableCell className="font-medium">
-                              <span className="text-sm text-slate-600">{item.item || item.id}</span>
+                              <span className="text-sm text-slate-600">Item {index + 1}</span>
                             </TableCell>
                             <TableCell>
                               <span className="text-slate-600">{item.pipeBrand || "-"}</span>
@@ -218,28 +218,53 @@ export function InspectionItemsList({
                     </p>
                   </div>
                 ) : (
-                  items.map((item: any) => (
-                    <Card key={(item.item || item.id)} className="border border-slate-200 hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-slate-900 text-lg leading-tight">Item {(item.item || item.id)}</h3>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <Calendar className="h-4 w-4 text-slate-500" />
-                              <span className="text-slate-600 text-sm">Próxima: {formatDate(item.nextInspectionDate)}</span>
+                  items.map((item: any, index: number) => (
+                    <Card key={item.id ?? `${index}-item`} className="border border-slate-200 hover:shadow-md transition-shadow">
+                      <CardContent className="p-4 space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-500">Item</p>
+                            <h3 className="font-semibold text-slate-900 text-xl leading-tight">#{index + 1}</h3>
+                          </div>
+                          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                            {item.finalResult || "-"}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 text-sm">
+                          <div className="flex items-center space-x-2">
+                            <Building2 className="h-4 w-4 text-slate-500" />
+                            <div>
+                              <p className="text-slate-500">Marca do Duto</p>
+                              <p className="font-medium text-slate-900">{item.pipeBrand || "Não informado"}</p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">{item.finalResult || "-"}</Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={() => onEditItem(item)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            <Ruler className="h-4 w-4 text-slate-500" />
+                            <div>
+                              <p className="text-slate-500">Diâmetro</p>
+                              <p className="font-medium text-slate-900">{item.diameter || "Indefinido"}</p>
+                            </div>
                           </div>
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-4 w-4 text-slate-500" />
+                            <div>
+                              <p className="text-slate-500">Próxima inspeção</p>
+                              <p className="font-medium text-slate-900">{formatDate(item.nextInspectionDate) || "-"}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 px-4"
+                            onClick={() => onEditItem(item)}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
