@@ -16,9 +16,10 @@ interface CopyItemModalProps {
 
 export function CopyItemModal({ isOpen, onClose, onCopy, loading = false }: CopyItemModalProps) {
   const [copies, setCopies] = useState(1)
+  const MAX_COPIES = 200
 
   const handleCopy = async () => {
-    if (copies > 0) {
+    if (copies > 0 && copies <= MAX_COPIES) {
       await onCopy(copies)
     }
   }
@@ -45,12 +46,17 @@ export function CopyItemModal({ isOpen, onClose, onCopy, loading = false }: Copy
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="copies">Número de cópias</Label>
+            <Label htmlFor="copies">Número de cópias (máximo: {MAX_COPIES})</Label>
             <Input
               id="copies"
               type="number"
               min="1"
+              max={MAX_COPIES}
               value={copies}
+              onChange={(e) => {
+                const value = parseInt(e.target.value) || 1
+                setCopies(Math.max(1, Math.min(MAX_COPIES, value)))
+              }}
               disabled={loading}
               className="w-full"
             />
@@ -59,7 +65,7 @@ export function CopyItemModal({ isOpen, onClose, onCopy, loading = false }: Copy
           <div className="flex flex-col gap-2">
             <Button
               onClick={handleCopy}
-              disabled={loading || copies < 1}
+              disabled={loading || copies < 1 || copies > MAX_COPIES}
               className="w-full bg-red-600 hover:bg-red-700"
             >
               {loading ? (
