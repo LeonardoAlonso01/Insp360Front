@@ -51,13 +51,9 @@ export function CopyItemModal({ isOpen, onClose, onCopy, loading = false }: Copy
               type="number"
               min="1"
               value={copies}
-              onChange={(e) => setCopies(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
               disabled={loading}
               className="w-full"
             />
-            <p className="text-xs text-muted-foreground">
-              Mínimo: 1, Máximo: 10
-            </p>
           </div>
 
           <div className="flex flex-col gap-2">
