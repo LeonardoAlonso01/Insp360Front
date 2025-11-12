@@ -37,11 +37,64 @@ export function InspectionItemsList({
     loadItems()
   }, [inspectionId])
 
+  const getItemStorageKey = (inspectionId: string) => `inspection-items-order:${inspectionId}`
+
+  const getItemKey = (item: any, fallback: number) => {
+    if (item?.id !== undefined && item?.id !== null) return String(item.id)
+    if (item?.item !== undefined && item?.item !== null) return String(item.item)
+    return `fallback-${fallback}`
+  }
+
+  const sortItemsByStoredOrder = (itemsToSort: any[], inspectionId: string) => {
+    if (itemsToSort.length === 0) {
+      return { sorted: itemsToSort, order: [] as string[] }
+    }
+
+    const storageKey = getItemStorageKey(inspectionId)
+    const storedOrderString = typeof window !== "undefined" ? sessionStorage.getItem(storageKey) : null
+    const storedOrder = storedOrderString ? JSON.parse(storedOrderString) as string[] : []
+
+    const sanitizedOrder = storedOrder.filter((key: string) =>
+      itemsToSort.some((item, idx) => getItemKey(item, idx) === key),
+    )
+
+    const orderMap = new Map<string, number>()
+    sanitizedOrder.forEach((key, index) => {
+      orderMap.set(key, index)
+    })
+
+    const itemsWithOrder = itemsToSort.map((item, index) => {
+      const key = getItemKey(item, index)
+      const existingOrder = orderMap.get(key)
+      const fallbackOrder = sanitizedOrder.length + index
+      return {
+        key,
+        data: item,
+        order: existingOrder !== undefined ? existingOrder : fallbackOrder,
+      }
+    })
+
+    itemsWithOrder.sort((a, b) => a.order - b.order)
+
+    const updatedOrder = itemsWithOrder.map((entry) => entry.key)
+
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(storageKey, JSON.stringify(updatedOrder))
+    }
+
+    return {
+      sorted: itemsWithOrder.map((entry) => entry.data),
+      order: updatedOrder,
+    }
+  }
+
   const loadItems = async () => {
     try {
       setLoading(true)
       const itemsData = await apiClient.getInspectionItems(inspectionId)
-      setItems(itemsData)
+      const normalizedItems = Array.isArray(itemsData) ? itemsData : []
+      const { sorted } = sortItemsByStoredOrder(normalizedItems, inspectionId)
+      setItems(sorted)
     } catch (error: any) {
       toast({
         title: "Erro!",

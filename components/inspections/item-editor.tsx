@@ -20,6 +20,7 @@ import {
   OPTIONS_TIPO,
   OPTIONS_SIM_NAO,
   OPTIONS_APROVADO_REPROVADO,
+  OPTIONS_APROVADO_CONDENADO,
 } from "@/lib/form-options"
 
 interface InspectionItemEditorProps {
@@ -637,7 +638,7 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
                     <Badge variant="destructive" className="ml-2 text-xs">Obrigatório</Badge>
                   </Label>
                   <SearchSelect
-                    options={OPTIONS_APROVADO_REPROVADO}
+                    options={OPTIONS_APROVADO_CONDENADO}
                     value={formData.finalResult}
                     onValueChange={(value) => handleInputChange("finalResult", value)}
                     placeholder="Selecione o resultado"
