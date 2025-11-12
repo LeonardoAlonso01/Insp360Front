@@ -26,11 +26,12 @@ interface InspectionStepsProps {
   inspectionId: string
   onBack: () => void
   onFinalize: (inspectionId: string) => void
+  onItemAdded?: () => void
 }
 
 const STEP_TITLES = ["Dados do Duto", "Ensaio/Fabricação", "Inspeção Visual", "Ensaio/Manutenção", "Finalização"]
 
-export default function InspectionSteps({ inspectionId, onBack, onFinalize }: InspectionStepsProps) {
+export default function InspectionSteps({ inspectionId, onBack, onFinalize, onItemAdded }: InspectionStepsProps) {
   const [state, setState] = useState<InspectionStepsState>({
     currentStep: 1,
     inspectionId,
@@ -231,22 +232,29 @@ export default function InspectionSteps({ inspectionId, onBack, onFinalize }: In
       // 2. Finalizar o ITEM da inspeção
       await apiClient.finalizeInspectionItem(inspectionId)
 
-      // 3. Resetar para etapa 1 para novo item, igual ao step 4
-      setState((prev) => ({
-        ...prev,
-        currentStep: 1,
-        step1: {},
-        step2: {},
-        step3: {},
-        step4: {},
-        step5: {},
-      }))
-
       toast({
         title: "Item Salvo!",
-        description: "Iniciando novo item da inspeção",
+        description: onItemAdded ? "Item adicionado com sucesso" : "Iniciando novo item da inspeção",
         variant: "success",
       });
+
+      // Se há um callback para quando item é adicionado (vindo da lista de itens), chamá-lo
+      if (onItemAdded) {
+        setTimeout(() => {
+          onItemAdded()
+        }, 1000)
+      } else {
+        // Caso contrário, resetar para etapa 1 para novo item
+        setState((prev) => ({
+          ...prev,
+          currentStep: 1,
+          step1: {},
+          step2: {},
+          step3: {},
+          step4: {},
+          step5: {},
+        }))
+      }
 
     } catch (error) {
       console.error("Erro ao adicionar novo item:", error)

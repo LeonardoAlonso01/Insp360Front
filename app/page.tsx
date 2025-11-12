@@ -74,6 +74,16 @@ export default function Page() {
     setCurrentView("item-editor")
   }
 
+  const handleAddNewItem = () => {
+    // Navegar para o fluxo de steps para adicionar um novo item
+    setCurrentView("steps")
+  }
+
+  const handleItemAdded = () => {
+    // Voltar para a lista de itens após adicionar um item
+    setCurrentView("items-list")
+  }
+
   const handleShowProfile = () => {
     setCurrentView("profile")
   }
@@ -105,8 +115,9 @@ export default function Page() {
       {currentView === "steps" && currentInspectionId && (
         <InspectionSteps
           inspectionId={currentInspectionId}
-          onBack={handleBackToList}
+          onBack={editingInspection ? handleBackToItemsList : handleBackToList}
           onFinalize={handleInspectionFinalized}
+          onItemAdded={editingInspection ? handleItemAdded : undefined}
         />
       )}
       {currentView === "finalization" && currentInspectionId && (
@@ -119,6 +130,7 @@ export default function Page() {
           inspectionData={editingInspection}
           onBack={handleBackToList}
           onEditItem={handleEditItem}
+          onAddNewItem={handleAddNewItem}
         />
       )}
       {currentView === "item-editor" && currentInspectionId && currentItem && (

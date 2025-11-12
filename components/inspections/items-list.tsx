@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, Edit, FileText, Calendar, User, Building2, Ruler } from "lucide-react"
+import { ArrowLeft, Edit, FileText, Calendar, User, Building2, Ruler, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -21,13 +21,15 @@ interface InspectionItemsListProps {
   }
   onBack: () => void
   onEditItem: (item: any) => void
+  onAddNewItem?: () => void
 }
 
 export function InspectionItemsList({ 
   inspectionId, 
   inspectionData, 
   onBack, 
-  onEditItem 
+  onEditItem,
+  onAddNewItem
 }: InspectionItemsListProps) {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -133,6 +135,17 @@ export function InspectionItemsList({
                 <span className="font-semibold text-slate-900 text-sm sm:text-base">Itens da Inspeção</span>
               </div>
             </div>
+            {onAddNewItem && (
+              <Button
+                size="sm"
+                onClick={onAddNewItem}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Adicionar Item</span>
+                <span className="sm:hidden">Adicionar</span>
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -188,13 +201,27 @@ export function InspectionItemsList({
           {/* Lista de itens */}
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                Itens da Inspeção
-                {loading && <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-600 border-t-transparent" />}
-              </CardTitle>
-              <CardDescription>
-                {items.length} item(s) encontrado(s)
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    Itens da Inspeção
+                    {loading && <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-600 border-t-transparent" />}
+                  </CardTitle>
+                  <CardDescription>
+                    {items.length} item(s) encontrado(s)
+                  </CardDescription>
+                </div>
+                {onAddNewItem && (
+                  <Button
+                    size="sm"
+                    onClick={onAddNewItem}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Adicionar Item
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {/* Versão Desktop - Tabela */}
