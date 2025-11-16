@@ -211,16 +211,6 @@ export function InspectionItemsList({
                     {items.length} item(s) encontrado(s)
                   </CardDescription>
                 </div>
-                {onAddNewItem && (
-                  <Button
-                    size="sm"
-                    onClick={onAddNewItem}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Item
-                  </Button>
-                )}
               </div>
             </CardHeader>
             <CardContent>
