@@ -9,10 +9,6 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Save, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
 import type { Step2Data } from "@/types/inspection-steps"
 import { SearchSelect } from "@/components/ui/search-select"
 import { OPTIONS_TIPO } from "@/lib/form-options"
@@ -35,9 +31,70 @@ export function Step2Form({ inspectionId, initialData, onNext, onBack, loading }
     dataProximaManutencao: "",
     ...initialData,
   })
+  
+  // Estado local para mês e ano separados (não enviado para API)
+  const [inspectionMonth, setInspectionMonth] = useState<string>("")
+  const [inspectionYear, setInspectionYear] = useState<string>("")
+  const [maintenanceMonth, setMaintenanceMonth] = useState<string>("")
+  const [maintenanceYear, setMaintenanceYear] = useState<string>("")
+
+  // Função para extrair mês e ano de uma data ISO
+  const extractMonthYearFromISO = (isoDate: string | null | undefined): { month: string; year: string } | null => {
+    if (!isoDate) return null
+    try {
+      const date = new Date(isoDate)
+      const year = date.getFullYear().toString()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      return { month, year }
+    } catch (error) {
+      console.error("Erro ao extrair mês/ano:", isoDate)
+      return null
+    }
+  }
+
+  // Função para converter mês/ano para ISO (primeiro dia do mês)
+  const formatMonthYearToISO = (month: string | null, year: string | null): string | null => {
+    if (!month || !year) return null
+    try {
+      const monthNum = parseInt(month)
+      const yearNum = parseInt(year)
+      if (isNaN(monthNum) || isNaN(yearNum) || monthNum < 1 || monthNum > 12 || yearNum < 1900 || yearNum > 2100) return null
+      const date = new Date(`${yearNum}-${month.padStart(2, '0')}-01T00:00:00.000Z`)
+      return date.toISOString()
+    } catch (error) {
+      console.error("Erro ao formatar mês/ano:", month, year)
+      return null
+    }
+  }
+
+  // Nomes dos meses em português
+  const monthNames = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ]
 
   useEffect(() => {
     setFormData((prev) => ({ ...prev, ...initialData, idInspection: inspectionId }))
+    
+    // Inicializar mês e ano a partir das datas ISO
+    const inspectionMonthYear = extractMonthYearFromISO(initialData.dataProximaInspecao)
+    const maintenanceMonthYear = extractMonthYearFromISO(initialData.dataProximaManutencao)
+    
+    if (inspectionMonthYear) {
+      setInspectionMonth(inspectionMonthYear.month)
+      setInspectionYear(inspectionMonthYear.year)
+    } else {
+      setInspectionMonth("")
+      setInspectionYear("")
+    }
+    
+    if (maintenanceMonthYear) {
+      setMaintenanceMonth(maintenanceMonthYear.month)
+      setMaintenanceYear(maintenanceMonthYear.year)
+    } else {
+      setMaintenanceMonth("")
+      setMaintenanceYear("")
+    }
   }, [initialData, inspectionId])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -60,6 +117,26 @@ export function Step2Form({ inspectionId, initialData, onNext, onBack, loading }
       ...prev,
       [id]: date ? date.toISOString() : "", // Salva como string ISO
     }))
+  }
+
+  const handleMonthYearChange = (type: 'inspection' | 'maintenance', month: string, year: string) => {
+    if (type === 'inspection') {
+      setInspectionMonth(month)
+      setInspectionYear(year)
+      const isoDate = formatMonthYearToISO(month, year)
+      setFormData((prev) => ({
+        ...prev,
+        dataProximaInspecao: isoDate || "",
+      }))
+    } else {
+      setMaintenanceMonth(month)
+      setMaintenanceYear(year)
+      const isoDate = formatMonthYearToISO(month, year)
+      setFormData((prev) => ({
+        ...prev,
+        dataProximaManutencao: isoDate || "",
+      }))
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -127,33 +204,21 @@ export function Step2Form({ inspectionId, initialData, onNext, onBack, loading }
                 Obrigatório
               </Badge>
             </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className="w-full justify-start text-left font-normal h-12 sm:h-11 text-base sm:text-sm"
-                >
-                  {formData.anoFabricacao ? formData.anoFabricacao.substring(0, 4) : <span>Selecione o ano</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Select
-                  value={formData.anoFabricacao ? formData.anoFabricacao.substring(0, 4) : ""}
-                  onValueChange={(year) => handleDateChange("anoFabricacao", new Date(Number(year), 0, 1))}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Ano" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </PopoverContent>
-            </Popover>
+            <Select
+              value={formData.anoFabricacao ? formData.anoFabricacao.substring(0, 4) : ""}
+              onValueChange={(year) => handleDateChange("anoFabricacao", new Date(Number(year), 0, 1))}
+            >
+              <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
+                <SelectValue placeholder="Selecione o ano" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Campo Data Próxima Inspeção */}
@@ -164,29 +229,38 @@ export function Step2Form({ inspectionId, initialData, onNext, onBack, loading }
                 Obrigatório
               </Badge>
             </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className="w-full justify-start text-left font-normal h-12 sm:h-11 text-base sm:text-sm"
-                >
-                  {formData.dataProximaInspecao ? (
-                    format(new Date(formData.dataProximaInspecao), "PPP", { locale: ptBR })
-                  ) : (
-                    <span>Selecione uma data</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.dataProximaInspecao ? new Date(formData.dataProximaInspecao) : undefined}
-                  onSelect={(date) => handleDateChange("dataProximaInspecao", date)}
-                  initialFocus
-                  locale={ptBR}
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="grid grid-cols-2 gap-2">
+              <Select
+                value={inspectionMonth}
+                onValueChange={(value) => handleMonthYearChange("inspection", value, inspectionYear)}
+              >
+                <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthNames.map((month, index) => (
+                    <SelectItem key={index + 1} value={String(index + 1).padStart(2, '0')}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={inspectionYear}
+                onValueChange={(value) => handleMonthYearChange("inspection", inspectionMonth, value)}
+              >
+                <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 50 }, (_, i) => new Date().getFullYear() + i).map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Campo Data Próxima Manutenção */}
@@ -197,29 +271,38 @@ export function Step2Form({ inspectionId, initialData, onNext, onBack, loading }
                 Obrigatório
               </Badge>
             </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className="w-full justify-start text-left font-normal h-12 sm:h-11 text-base sm:text-sm"
-                >
-                  {formData.dataProximaManutencao ? (
-                    format(new Date(formData.dataProximaManutencao), "PPP", { locale: ptBR })
-                  ) : (
-                    <span>Selecione uma data</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.dataProximaManutencao ? new Date(formData.dataProximaManutencao) : undefined}
-                  onSelect={(date) => handleDateChange("dataProximaManutencao", date)}
-                  initialFocus
-                  locale={ptBR}
-                />
-              </PopoverContent>
-            </Popover>
+            <div className="grid grid-cols-2 gap-2">
+              <Select
+                value={maintenanceMonth}
+                onValueChange={(value) => handleMonthYearChange("maintenance", value, maintenanceYear)}
+              >
+                <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthNames.map((month, index) => (
+                    <SelectItem key={index + 1} value={String(index + 1).padStart(2, '0')}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={maintenanceYear}
+                onValueChange={(value) => handleMonthYearChange("maintenance", maintenanceMonth, value)}
+              >
+                <SelectTrigger className="h-12 sm:h-11 text-base sm:text-sm">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 50 }, (_, i) => new Date().getFullYear() + i).map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Botões de ação */}

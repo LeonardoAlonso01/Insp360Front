@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Toast } from "@/components/ui/toast"
 import { SearchSelect } from "@/components/ui/search-select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient } from "@/lib/api"
 import {
@@ -42,7 +44,11 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
     manufactureYear: "",
     testPressure: "",
     nextInspectionDate: "",
+    nextInspectionMonth: "",
+    nextInspectionYear: "",
     nextMaintenanceDate: "",
+    nextMaintenanceMonth: "",
+    nextMaintenanceYear: "",
     actualLength: "",
     coatingShell: "",
     unions: "",
@@ -63,21 +69,6 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
   
   const [saving, setSaving] = useState(false)
   const { toasts, toast, removeToast } = useToast()
-
-  // Função para converter data ISO para formato do input (yyyy-MM-dd)
-  const formatISOToInputDate = (isoDate: string | null | undefined): string => {
-    if (!isoDate) return ""
-    try {
-      const date = new Date(isoDate)
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      return `${year}-${month}-${day}`
-    } catch (error) {
-      console.error("Erro ao converter data ISO:", isoDate)
-      return ""
-    }
-  }
 
   // Função para extrair apenas o ano de uma data ISO
   const extractYearFromISO = (isoDate: string | null | undefined): string => {
@@ -105,6 +96,41 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
     }
   }
 
+  // Função para extrair mês e ano de uma data ISO (retorna {month, year} ou null)
+  const extractMonthYearFromISO = (isoDate: string | null | undefined): { month: string; year: string } | null => {
+    if (!isoDate) return null
+    try {
+      const date = new Date(isoDate)
+      const year = date.getFullYear().toString()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      return { month, year }
+    } catch (error) {
+      console.error("Erro ao extrair mês/ano:", isoDate)
+      return null
+    }
+  }
+
+  // Função para converter mês/ano para ISO (primeiro dia do mês)
+  const formatMonthYearToISO = (month: string | null, year: string | null): string | null => {
+    if (!month || !year) return null
+    try {
+      const monthNum = parseInt(month)
+      const yearNum = parseInt(year)
+      if (isNaN(monthNum) || isNaN(yearNum) || monthNum < 1 || monthNum > 12 || yearNum < 1900 || yearNum > 2100) return null
+      const date = new Date(`${yearNum}-${month.padStart(2, '0')}-01T00:00:00.000Z`)
+      return date.toISOString()
+    } catch (error) {
+      console.error("Erro ao formatar mês/ano:", month, year)
+      return null
+    }
+  }
+
+  // Nomes dos meses em português
+  const monthNames = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ]
+
   useEffect(() => {
     console.log("🔍 [ITEM-EDITOR] Item recebido:", item)
     console.log("🔍 [ITEM-EDITOR] Dados específicos:")
@@ -114,6 +140,9 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
     console.log("   - item completo:", JSON.stringify(item, null, 2))
     
     // Inicializa o formulário com os campos do item
+    const nextInspectionMonthYear = extractMonthYearFromISO(item.nextInspectionDate)
+    const nextMaintenanceMonthYear = extractMonthYearFromISO(item.nextMaintenanceDate)
+    
     const initialData = {
       inspectionId: item.inspectionId ?? inspectionId,
       item: item.item ?? item.id,
@@ -124,8 +153,12 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
       type: item.type?.toString() ?? "",
       manufactureYear: extractYearFromISO(item.manufactureYear),
       testPressure: item.testPressure ?? "",
-      nextInspectionDate: formatISOToInputDate(item.nextInspectionDate),
-      nextMaintenanceDate: formatISOToInputDate(item.nextMaintenanceDate),
+      nextInspectionDate: item.nextInspectionDate ?? "",
+      nextInspectionMonth: nextInspectionMonthYear?.month ?? "",
+      nextInspectionYear: nextInspectionMonthYear?.year ?? "",
+      nextMaintenanceDate: item.nextMaintenanceDate ?? "",
+      nextMaintenanceMonth: nextMaintenanceMonthYear?.month ?? "",
+      nextMaintenanceYear: nextMaintenanceMonthYear?.year ?? "",
       actualLength: item.actualLength ?? "",
       coatingShell: item.coatingShell ?? "",
       unions: item.unions ?? "",
@@ -157,18 +190,6 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
     setFormData((prev: any) => ({ ...prev, [field]: value }))
   }
 
-  // Função para converter data do input para ISO com timezone UTC
-  const formatDateToISO = (dateString: string | null): string | null => {
-    if (!dateString) return null
-    try {
-      const date = new Date(dateString)
-      return date.toISOString()
-    } catch (error) {
-      console.error("Erro ao formatar data:", dateString)
-      return null
-    }
-  }
-
   const handleSave = async () => {
     setSaving(true)
     try {
@@ -183,8 +204,8 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
         type: formData.type ? Number(formData.type) : undefined,
         manufactureYear: formatYearToISO(formData.manufactureYear),
         testPressure: formData.testPressure,
-        nextInspectionDate: formatDateToISO(formData.nextInspectionDate),
-        nextMaintenanceDate: formatDateToISO(formData.nextMaintenanceDate),
+        nextInspectionDate: formatMonthYearToISO(formData.nextInspectionMonth, formData.nextInspectionYear),
+        nextMaintenanceDate: formatMonthYearToISO(formData.nextMaintenanceMonth, formData.nextMaintenanceYear),
         actualLength: formData.actualLength,
         coatingShell: formData.coatingShell,
         unions: formData.unions,
@@ -406,16 +427,37 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
 
                 <div className="space-y-2">
                   <Label htmlFor="manufactureYear">Ano de Fabricação</Label>
-                  <Input
-                    id="manufactureYear"
-                    type="number"
-                    inputMode="numeric"
-                    min="1900"
-                    max="2100"
-                    value={formData.manufactureYear}
-                    onChange={(e) => handleInputChange("manufactureYear", e.target.value)}
-                    placeholder="Ex: 2024"
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        {formData.manufactureYear ? (
+                          formData.manufactureYear
+                        ) : (
+                          <span className="text-muted-foreground">Selecione o ano</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Select
+                        value={formData.manufactureYear}
+                        onValueChange={(value) => handleInputChange("manufactureYear", value)}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Ano" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
@@ -435,12 +477,38 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
                     <Calendar className="h-4 w-4 inline mr-1" />
                     Próxima Inspeção
                   </Label>
-                  <Input
-                    id="nextInspectionDate"
-                    type="date"
-                    value={formData.nextInspectionDate}
-                    onChange={(e) => handleInputChange("nextInspectionDate", e.target.value)}
-                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select
+                      value={formData.nextInspectionMonth}
+                      onValueChange={(value) => handleInputChange("nextInspectionMonth", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {monthNames.map((month, index) => (
+                          <SelectItem key={index + 1} value={String(index + 1).padStart(2, '0')}>
+                            {month}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={formData.nextInspectionYear}
+                      onValueChange={(value) => handleInputChange("nextInspectionYear", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Ano" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 50 }, (_, i) => new Date().getFullYear() + i).map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -448,12 +516,38 @@ export function InspectionItemEditor({ inspectionId, item, onBack, onSave }: Ins
                     <Calendar className="h-4 w-4 inline mr-1" />
                     Próxima Manutenção
                   </Label>
-                  <Input
-                    id="nextMaintenanceDate"
-                    type="date"
-                    value={formData.nextMaintenanceDate}
-                    onChange={(e) => handleInputChange("nextMaintenanceDate", e.target.value)}
-                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select
+                      value={formData.nextMaintenanceMonth}
+                      onValueChange={(value) => handleInputChange("nextMaintenanceMonth", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {monthNames.map((month, index) => (
+                          <SelectItem key={index + 1} value={String(index + 1).padStart(2, '0')}>
+                            {month}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={formData.nextMaintenanceYear}
+                      onValueChange={(value) => handleInputChange("nextMaintenanceYear", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Ano" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 50 }, (_, i) => new Date().getFullYear() + i).map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </CardContent>
