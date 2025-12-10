@@ -171,7 +171,7 @@ export function Step2Form({ inspectionId, initialData, onNext, onBack, loading }
               id="pressaoEnsaio"
               type="text"
               inputMode="decimal"
-              placeholder="Ex: 10 bar"
+              placeholder="Ex: 10 kg"
               value={formData.pressaoEnsaio}
               onChange={handleChange}
               className="h-12 sm:h-11 transition-all duration-200 focus:ring-2 focus:ring-red-500/20 text-base sm:text-sm"
