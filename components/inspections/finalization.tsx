@@ -50,39 +50,69 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
     }
   }
 
-  // const handleGeneratePDF = async () => {
-  //   if (!inspection || items.length === 0) {
-  //     toast({
-  //       title: "Erro!",
-  //       description: "Dados da inspeção não disponíveis",
-  //       variant: "destructive",
-  //     })
-  //     return
-  //   }
+  const handleGeneratePDF = async () => {
+    if (!inspection) {
+      toast({
+        title: "Erro!",
+        description: "Dados da inspeção não disponíveis",
+        variant: "destructive",
+      })
+      return
+    }
 
-  //   setGeneratingPDF(true)
-  //   try {
-  //     await PDFGenerator.generateAndDownload({
-  //       inspection,
-  //       items,
-  //     })
+    if (!inspectionId) {
+      toast({
+        title: "Erro!",
+        description: "ID da inspeção não encontrado",
+        variant: "destructive",
+      })
+      return
+    }
 
-  //     toast({
-  //       title: "Sucesso!",
-  //       description: "PDF gerado e baixado com sucesso",
-  //       variant: "success",
-  //     })
-  //   } catch (error) {
-  //     console.error("PDF Generation Error:", error)
-  //     toast({
-  //       title: "Erro!",
-  //       description: "Não foi possível gerar o PDF",
-  //       variant: "destructive",
-  //     })
-  //   } finally {
-  //     setGeneratingPDF(false)
-  //   }
-  // }
+    setGeneratingPDF(true)
+    try {
+      console.log("[InspectionFinalization] Iniciando geração de relatório para:", inspectionId)
+      
+      // Gerar relatório via API
+      const blob = await apiClient.generateInspectionReport(inspectionId)
+      
+      if (!blob || blob.size === 0) {
+        throw new Error("O arquivo PDF retornado está vazio")
+      }
+      
+      console.log("[InspectionFinalization] Blob recebido, tamanho:", blob.size, "bytes")
+      
+      // Criar link de download
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `relatorio-inspecao-${inspectionId}-${new Date().getTime()}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      
+      // Limpar após um pequeno delay
+      setTimeout(() => {
+        link.remove()
+        URL.revokeObjectURL(url)
+      }, 100)
+
+      toast({
+        title: "Sucesso!",
+        description: "PDF gerado e baixado com sucesso",
+        variant: "success",
+      })
+    } catch (error) {
+      console.error("[InspectionFinalization] Erro ao gerar PDF:", error)
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido ao gerar o PDF"
+      toast({
+        title: "Erro!",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setGeneratingPDF(false)
+    }
+  }
 
   // const handlePreviewPDF = async () => {
   //   if (!inspection || items.length === 0) {
@@ -215,33 +245,7 @@ export default function InspectionFinalization({ inspectionId, onBack }: Inspect
 
                 <div className="flex gap-2">
                   <Button
-                    onClick={async () => {
-                      setGeneratingPDF(true)
-                      try {
-                        const blob = await apiClient.generateInspectionReport(inspectionId)
-                        const url = URL.createObjectURL(blob)
-                        const a = document.createElement('a')
-                        a.href = url
-                        a.download = `relatorio-inspecao-${inspectionId}.pdf`
-                        document.body.appendChild(a)
-                        a.click()
-                        a.remove()
-                        URL.revokeObjectURL(url)
-                        toast({
-                          title: "Sucesso!",
-                          description: "PDF gerado pela API e baixado com sucesso",
-                          variant: "success",
-                        })
-                      } catch (error) {
-                        toast({
-                          title: "Erro!",
-                          description: "Não foi possível baixar o PDF da API",
-                          variant: "destructive",
-                        })
-                      } finally {
-                        setGeneratingPDF(false)
-                      }
-                    }}
+                    onClick={handleGeneratePDF}
                     disabled={generatingPDF}
                     className="bg-red-600 hover:bg-red-700 text-white"
                   >

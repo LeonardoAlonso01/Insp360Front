@@ -82,6 +82,38 @@ export interface FinalizeInspectionRequest {
   status: "concluida"
 }
 
+// Tipos para gerenciamento de usuários
+export interface CompanyUser {
+  id: string
+  name: string
+  email: string
+  isActive: boolean
+  role: number
+  companyId: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface CreateUserRequest {
+  name: string
+  email: string
+  password: string
+  role?: string
+  companyId: string
+}
+
+export interface UpdateUserRequest {
+  name?: string
+  email?: string
+  role?: string
+  isActive?: boolean
+}
+
+export interface ResetPasswordRequest {
+  userId: string
+  newPassword: string
+}
+
 // Classe para gerenciar requisições da API
 class ApiClient {
   private baseURL: string
@@ -93,37 +125,82 @@ class ApiClient {
     this.baseURL = baseURL
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}, isRetry: boolean = false): Promise<T> {
     const url = `${this.baseURL}${endpoint}`
-
+    const method = options.method || "GET"
+    
     const config: RequestInit = {
       headers: {
         "Content-Type": "application/json",
-        ...authService.getAuthHeaders(), // Adicionar token automaticamente
+        ...authService.getAuthHeaders(), // Adicionar token no header Authorization
         ...options.headers,
       },
+      credentials: "include", // Importante: envia refresh token via cookies HTTP-only automaticamente
       ...options,
     }
 
+    console.log(`[API Request] ${isRetry ? "[RETRY] " : ""}${method} ${url}`)
+    console.log(`[API Request] Options:`, {
+      method,
+      hasBody: !!options.body,
+      headers: config.headers,
+      credentials: config.credentials,
+    })
+
     try {
+      console.log(`[API Request] Enviando requisição para: ${url}`)
       const response = await fetch(url, config)
+      
+      console.log(`[API Response] Status: ${response.status} ${response.statusText}`)
+      console.log(`[API Response] Headers:`, Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
-        if (response.status === 401) {
-          // Token expirado, fazer logout
-          authService.logout()
-          window.location.href = "/"
+        console.log(`[API Response] Erro na resposta: ${response.status}`)
+        
+        // Nunca fazer refresh em endpoints de autenticação (login, refresh, logout)
+        const isAuthEndpoint = endpoint.includes("/Auth/login") || 
+                               endpoint.includes("/Auth/refresh") || 
+                               endpoint.includes("/Auth/logout")
+        
+        // Só fazer refresh token se for 401, não for uma tentativa de retry e não for endpoint de auth
+        if (response.status === 401 && !isRetry && !isAuthEndpoint) {
+          console.log(`[API Request] Token expirado (401), tentando refresh token...`)
+          // Token expirado, tentar refresh token
+          const refreshed = await authService.refreshToken()
+          
+          console.log(`[API Request] Refresh token ${refreshed ? "sucesso" : "falhou"}`)
+          
+          if (refreshed) {
+            // Tentar novamente a requisição após refresh (marcar como retry)
+            console.log(`[API Request] Refazendo requisição após refresh token`)
+            return this.request<T>(endpoint, options, true)
+          } else {
+            // Refresh falhou, fazer logout
+            console.log(`[API Request] Refresh falhou, fazendo logout`)
+            await authService.logout()
+            throw new Error("Sessão expirada")
+          }
+        } else if (response.status === 401 && isRetry) {
+          // Se ainda for 401 após refresh, fazer logout
+          console.log(`[API Request] Ainda recebendo 401 após refresh, fazendo logout`)
+          await authService.logout()
           throw new Error("Sessão expirada")
+        } else if (response.status === 401 && isAuthEndpoint) {
+          // Se for 401 em endpoint de auth, não tentar refresh (erro de credenciais)
+          console.log(`[API Request] 401 em endpoint de autenticação, não tentando refresh`)
         }
+        
         let errorMsg = `HTTP error! status: ${response.status}`;
         try {
           const text = await response.text();
+          console.log(`[API Response] Corpo do erro:`, text)
           if (text) {
             const errorData = JSON.parse(text);
             errorMsg = errorData.message || errorMsg;
-            console.error('API error details:', errorData);
+            console.error('[API Response] Detalhes do erro:', errorData);
           }
         } catch (e) {
+          console.log(`[API Response] Erro ao parsear resposta de erro:`, e)
           // Se não for JSON, mantém a mensagem padrão
         }
         throw new Error(errorMsg);
@@ -132,12 +209,30 @@ class ApiClient {
       // Só tenta fazer .json() se houver corpo
       let data = null;
       const text = await response.text();
+      console.log(`[API Response] Texto bruto recebido:`, text)
+      console.log(`[API Response] Tamanho do texto:`, text?.length)
+      
       if (text) {
-        data = JSON.parse(text);
+        try {
+          data = JSON.parse(text);
+          console.log(`[API Response] Resposta parseada com sucesso:`, data)
+          console.log(`[API Response] Tipo da resposta parseada:`, typeof data, Array.isArray(data))
+        } catch (e) {
+          console.log(`[API Response] Erro ao parsear JSON:`, e)
+          data = text
+        }
+      } else {
+        console.log(`[API Response] Resposta sem corpo`)
       }
+      
+      console.log(`[API Request] ✅ Requisição concluída com sucesso: ${method} ${url}`)
       return data
     } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error)
+      console.error(`[API Request] ❌ Erro na requisição ${method} ${url}:`, error)
+      if (error instanceof Error) {
+        console.error(`[API Request] Mensagem de erro:`, error.message)
+        console.error(`[API Request] Stack:`, error.stack)
+      }
       throw {
         message: error instanceof Error ? error.message : "Erro de conexão ou API indisponível",
         status: "offline",
@@ -401,29 +496,223 @@ class ApiClient {
 
   // Gerar PDF da inspeção
   async generateInspectionPDF(inspectionId: string): Promise<Blob> {
-    const response = await fetch(`${this.baseURL}/inspections/${inspectionId}/pdf`, {
+    const url = `${this.baseURL}/inspections/${inspectionId}/pdf`
+    console.log(`[API] generateInspectionPDF - Gerando PDF para inspeção: ${inspectionId}`)
+    
+    const response = await fetch(url, {
       headers: {
-        ...authService.getAuthHeaders(),
+        ...authService.getAuthHeaders(), // Adicionar token no header Authorization
       },
+      credentials: "include", // Envia refresh token via cookies
     })
 
+    console.log(`[API] generateInspectionPDF - Status: ${response.status} ${response.statusText}`)
+
     if (!response.ok) {
-      throw new Error("Erro ao gerar PDF")
+      const errorText = await response.text().catch(() => "Erro desconhecido")
+      console.error(`[API] generateInspectionPDF - Erro: ${response.status}`, errorText)
+      throw new Error(`Erro ao gerar PDF: ${response.status}`)
     }
 
+    console.log(`[API] generateInspectionPDF - ✅ PDF gerado com sucesso`)
     return response.blob()
   }
   // Gerar relatório em PDF da inspeção (novo endpoint)
-  async generateInspectionReport(inspectionId: string): Promise<Blob> {
-    const response = await fetch(`${this.baseURL}/inspection/gerarrelatorio?id=${inspectionId}`, {
+  async generateInspectionReport(inspectionId: string, isRetry: boolean = false): Promise<Blob> {
+    const endpoint = `/inspection/gerarrelatorio?id=${inspectionId}`
+    const url = `${this.baseURL}${endpoint}`
+    
+    console.log(`[API] generateInspectionReport - Gerando relatório para inspeção: ${inspectionId}`)
+    
+    const config: RequestInit = {
       headers: {
         ...authService.getAuthHeaders(),
       },
-    })
-    if (!response.ok) {
-      throw new Error("Erro ao gerar relatório")
+      credentials: "include",
     }
+    
+    console.log(`[API] generateInspectionReport - Fazendo requisição para: ${url}`)
+    const response = await fetch(url, config)
+    
+    console.log(`[API] generateInspectionReport - Status: ${response.status} ${response.statusText}`)
+    
+    if (!response.ok) {
+      // Se for 401 e não for retry, tentar refresh token
+      if (response.status === 401 && !isRetry) {
+        console.log(`[API] generateInspectionReport - Token expirado, tentando refresh...`)
+        const refreshed = await authService.refreshToken()
+        
+        if (refreshed) {
+          console.log(`[API] generateInspectionReport - Refresh bem-sucedido, refazendo requisição...`)
+          return this.generateInspectionReport(inspectionId, true)
+        } else {
+          await authService.logout()
+          throw new Error("Sessão expirada")
+        }
+      }
+      
+      const errorText = await response.text().catch(() => "Erro desconhecido")
+      console.error(`[API] generateInspectionReport - Erro: ${response.status}`, errorText)
+      throw new Error(`Erro ao gerar relatório: ${response.status} - ${errorText}`)
+    }
+    
+    console.log(`[API] generateInspectionReport - ✅ Relatório gerado com sucesso`)
     return response.blob()
+  }
+
+  // Tipos para gerenciamento de usuários
+  async getCompanyUsers(): Promise<CompanyUser[]> {
+    const companyId = authService.getCompanyId()
+    if (!companyId) {
+      throw new Error("Company ID não encontrado")
+    }
+    return this.request<CompanyUser[]>(`/users/company/${companyId}`)
+  }
+
+  // Buscar usuários usando o novo endpoint /user
+  async getUsers(query: string = ""): Promise<CompanyUser[]> {
+    const companyId = authService.getCompanyId()
+    if (!companyId) {
+      throw new Error("Company ID não encontrado")
+    }
+
+    const searchParams = new URLSearchParams()
+    searchParams.append("query", query)
+    searchParams.append("companyId", companyId)
+
+    const endpoint = `/user?${searchParams.toString()}`
+    
+    console.log(`[API] getUsers - Endpoint: ${endpoint}`)
+    console.log(`[API] getUsers - Query: ${query}, CompanyId: ${companyId}`)
+    
+    // O retorno da API vem em PascalCase, precisamos mapear para camelCase
+    interface ApiUserResponse {
+      Id: string
+      Name: string
+      Email: string
+      IsActive: boolean
+      Role: number
+    }
+
+    try {
+      const response = await this.request<any>(endpoint)
+      console.log(`[API] getUsers - Resposta bruta recebida:`, response)
+      console.log(`[API] getUsers - Tipo da resposta:`, typeof response)
+      console.log(`[API] getUsers - É array?:`, Array.isArray(response))
+      
+      // Se a resposta for null ou undefined
+      if (!response) {
+        console.warn(`[API] getUsers - Resposta é null ou undefined`)
+        return []
+      }
+      
+      // Verificar se a resposta é um array
+      if (!Array.isArray(response)) {
+        console.log(`[API] getUsers - Resposta não é um array direto, verificando wrappers...`)
+        // Se não for array, pode estar dentro de um objeto wrapper
+        if (response && typeof response === 'object') {
+          // Tentar diferentes propriedades comuns
+          const possibleArray = response.data || response.users || response.items || response.result || []
+          console.log(`[API] getUsers - Array encontrado em wrapper:`, possibleArray)
+          if (Array.isArray(possibleArray)) {
+            return this.mapUsers(possibleArray, companyId)
+          }
+          // Se não encontrou array, pode ser que o objeto seja um único usuário
+          if (response.Id || response.id) {
+            console.log(`[API] getUsers - Resposta é um único usuário, convertendo para array`)
+            return this.mapUsers([response], companyId)
+          }
+        }
+        console.warn(`[API] getUsers - Não foi possível extrair array da resposta:`, response)
+        return []
+      }
+
+
+      
+      // Mapear de PascalCase para camelCase
+      const mapped = this.mapUsers(response, companyId)
+      console.log(`[API] getUsers - Usuários mapeados:`, mapped)
+      return mapped
+    } catch (error) {
+      console.error(`[API] getUsers - Erro na requisição:`, error)
+      throw error
+    }
+  }
+
+  // Método auxiliar para mapear usuários
+  private mapUsers(apiUsers: any[], companyId: string): CompanyUser[] {
+    if (!Array.isArray(apiUsers) || apiUsers.length === 0) {
+      console.log(`[API] mapUsers - Array vazio ou inválido:`, apiUsers)
+      return []
+    }
+    
+    return apiUsers.map((user, index) => {
+      console.log(`[API] mapUsers - Mapeando usuário ${index}:`, user)
+      
+      if (!user) {
+        console.warn(`[API] mapUsers - Usuário ${index} é null ou undefined`)
+        return null
+      }
+      
+      // Suportar tanto PascalCase quanto camelCase
+      const mapped = {
+        id: user.Id || user.id || '',
+        name: user.Name || user.name || '',
+        email: user.Email || user.email || '',
+        isActive: user.IsActive !== undefined ? user.IsActive : (user.isActive !== undefined ? user.isActive : true),
+        role: user.Role !== undefined ? user.Role : (user.role !== undefined ? (typeof user.role === 'number' ? user.role : parseInt(user.role || '2')) : 2),
+        companyId: companyId
+      }
+      
+      console.log(`[API] mapUsers - Usuário ${index} mapeado:`, mapped)
+      
+      // Validar se os campos obrigatórios estão presentes
+      if (!mapped.id || !mapped.name || !mapped.email) {
+        console.warn(`[API] mapUsers - Usuário ${index} tem campos faltando:`, mapped)
+      }
+      
+      return mapped
+    }).filter((user): user is CompanyUser => user !== null)
+  }
+
+  async createUser(data: CreateUserRequest): Promise<CompanyUser> {
+    return this.request<CompanyUser>("/users", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateUser(userId: string, data: UpdateUserRequest): Promise<CompanyUser> {
+    return this.request<CompanyUser>(`/users/${userId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async resetUserPassword(userId: string): Promise<{ TemporaryPassword?: string; temporaryPassword?: string }> {
+    console.log(`[API] resetUserPassword - Resetando senha para userId: ${userId}`)
+    const response = await this.request<any>(`/user/resetpassword`, {
+      method: "PUT",
+      body: JSON.stringify({ userId }),
+    })
+    console.log(`[API] resetUserPassword - Resposta recebida:`, response)
+    console.log(`[API] resetUserPassword - Tipo da resposta:`, typeof response)
+    console.log(`[API] resetUserPassword - TemporaryPassword (PascalCase):`, response?.TemporaryPassword)
+    console.log(`[API] resetUserPassword - temporaryPassword (camelCase):`, response?.temporaryPassword)
+    
+    // Normalizar para garantir que sempre retornamos TemporaryPassword
+    const password = response?.TemporaryPassword || response?.temporaryPassword || ""
+    console.log(`[API] resetUserPassword - Senha extraída:`, password ? "***" : "(vazia)")
+    
+    return {
+      TemporaryPassword: password,
+    }
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    return this.request<void>(`/users/${userId}`, {
+      method: "DELETE",
+    })
   }
 
   // Buscar dados agregados do dashboard (novo endpoint)

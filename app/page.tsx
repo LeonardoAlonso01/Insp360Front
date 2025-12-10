@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/use-auth"
+import LandingPage from "@/components/landing/landing-page"
 import LoginPage from "@/components/auth/login-page"
+import SignUpPage from "@/components/auth/signup-page"
 import InspectionListEnhanced from "@/components/inspections/list"
 import InspectionForm from "@/components/inspections/create-form"
 import InspectionSteps from "@/components/inspections/steps"
@@ -10,12 +12,13 @@ import InspectionFinalization from "@/components/inspections/finalization"
 import { InspectionItemsList } from "@/components/inspections/items-list"
 import { InspectionItemEditor } from "@/components/inspections/item-editor"
 import UserProfile from "@/components/profile/user-profile"
+import UsersList from "@/components/users/users-list"
 import type { Inspection, InspectionItem } from "@/lib/api"
 
-type ViewType = "login" | "list" | "form" | "steps" | "finalization" | "profile" | "items-list" | "item-editor"
+type ViewType = "landing" | "login" | "signup" | "list" | "form" | "steps" | "finalization" | "profile" | "items-list" | "item-editor" | "users"
 
 export default function Page() {
-  const [currentView, setCurrentView] = useState<ViewType>("login")
+  const [currentView, setCurrentView] = useState<ViewType>("landing")
   const [editingInspection, setEditingInspection] = useState<Inspection | null>(null)
   const [currentInspectionId, setCurrentInspectionId] = useState<string | null>(null)
   const [currentItem, setCurrentItem] = useState<InspectionItem | null>(null)
@@ -27,13 +30,29 @@ export default function Page() {
       if (isAuthenticated) {
         setCurrentView("list")
       } else {
-        setCurrentView("login")
+        setCurrentView("landing")
       }
     }
   }, [isAuthenticated, loading])
 
+  const handleLoginClick = () => {
+    setCurrentView("login")
+  }
+
+  const handleSignUpClick = () => {
+    setCurrentView("signup")
+  }
+
   const handleLoginSuccess = () => {
     setCurrentView("list")
+  }
+
+  const handleSignUpSuccess = () => {
+    setCurrentView("login")
+  }
+
+  const handleBackToLanding = () => {
+    setCurrentView("landing")
   }
 
   const handleCreateNew = () => {
@@ -88,6 +107,14 @@ export default function Page() {
     setCurrentView("profile")
   }
 
+  const handleShowUsers = () => {
+    setCurrentView("users")
+  }
+
+  const handleShowList = () => {
+    setCurrentView("list")
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -101,10 +128,22 @@ export default function Page() {
 
   return (
     <>
-      {currentView === "login" && <LoginPage onLoginSuccess={handleLoginSuccess} />}
-      {currentView === "list" && (
-        <InspectionListEnhanced onCreateNew={handleCreateNew} onEdit={handleEdit} onShowProfile={handleShowProfile} />
+      {currentView === "landing" && (
+        <LandingPage onLoginClick={handleLoginClick} onSignUpClick={handleSignUpClick} />
       )}
+      {currentView === "login" && <LoginPage onLoginSuccess={handleLoginSuccess} />}
+      {currentView === "signup" && (
+        <SignUpPage onSignUpSuccess={handleSignUpSuccess} onBack={handleBackToLanding} />
+      )}
+      {currentView === "list" && (
+        <InspectionListEnhanced 
+          onCreateNew={handleCreateNew} 
+          onEdit={handleEdit} 
+          onShowProfile={handleShowProfile}
+          onShowUsers={handleShowUsers}
+        />
+      )}
+      {currentView === "users" && <UsersList onBack={handleBackToList} />}
       {currentView === "form" && (
         <InspectionForm
           onBack={handleBackToList}

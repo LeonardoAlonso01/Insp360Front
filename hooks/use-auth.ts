@@ -9,13 +9,21 @@ export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
-    // Verificar se há usuário logado ao carregar
-    const currentUser = authService.getUser()
-    const authenticated = authService.isAuthenticated()
+    // Verificar se há usuário logado no localStorage
+    // A validação real da autenticação será feita quando a primeira requisição da API retornar 401
+    const checkAuth = () => {
+      const cachedUser = authService.getUser()
+      if (cachedUser) {
+        setUser(cachedUser)
+        setIsAuthenticated(true)
+      } else {
+        setUser(null)
+        setIsAuthenticated(false)
+      }
+      setLoading(false)
+    }
 
-    setUser(currentUser)
-    setIsAuthenticated(authenticated)
-    setLoading(false)
+    checkAuth()
   }, [])
 
   const login = async (credentials: LoginRequest) => {
@@ -23,7 +31,8 @@ export function useAuth() {
     try {
       const response = await authService.login(credentials)
 
-      if (response.token !== null || response.token !== "") {
+      // Tokens vêm via cookie HTTP-only, apenas precisamos do usuário
+      if (response.user) {
         setUser(response.user)
         setIsAuthenticated(true)
         return response
@@ -37,10 +46,20 @@ export function useAuth() {
     }
   }
 
-  const logout = () => {
-    authService.logout()
-    setUser(null)
-    setIsAuthenticated(false)
+  const logout = async () => {
+    setLoading(true)
+    try {
+      await authService.logout()
+      setUser(null)
+      setIsAuthenticated(false)
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error)
+      // Mesmo com erro, limpar estado local
+      setUser(null)
+      setIsAuthenticated(false)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return {

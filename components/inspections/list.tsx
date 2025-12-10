@@ -28,15 +28,17 @@ import { useToast } from "@/hooks/use-toast"
 import type { Inspection } from "@/lib/api"
 import { useState, useEffect } from "react" // Importar useEffect
 import { useAuth } from "@/hooks/use-auth"
+import { isAdminRole } from "@/lib/auth"
 import { formatDate, getStatusBadge } from "@/components/inspections/utils"
 
 interface InspectionListEnhancedProps {
   onCreateNew: () => void
   onEdit?: (inspection: Inspection) => void
   onShowProfile?: () => void
+  onShowUsers?: () => void
 }
 
-export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProfile }: InspectionListEnhancedProps) {
+export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProfile, onShowUsers }: InspectionListEnhancedProps) {
   const [downloadingPdfId, setDownloadingPdfId] = useState<string | null>(null)
   const { toasts, toast, removeToast } = useToast();
   const { user, logout } = useAuth();
@@ -143,20 +145,22 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
               <Button
                 variant="ghost"
                 size="sm"
-                className="bg-red-50 text-red-700 hover:bg-red-100 text-xs sm:text-sm px-2 sm:px-3"
+                className="bg-red-50 text-red-700 hover:bg-red-100 text-xs sm:text-sm px-2 sm:px-3 border-b-2 border-red-600"
               >
                 <Building2 className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Inspeções</span>
               </Button>
-              {/* <Button
-                variant="ghost"
-                size="sm"
-                className="text-slate-600 hover:text-slate-900 text-xs sm:text-sm px-2 sm:px-3"
-                //onClick={onShowProfile}
-              >
-                <Users className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Usuário</span>
-              </Button> */}
+              {(user?.email === "leooalonso@gmail.com" || isAdminRole(user?.role)) && onShowUsers && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-600 hover:text-slate-900 text-xs sm:text-sm px-2 sm:px-3"
+                  onClick={onShowUsers}
+                >
+                  <Users className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Usuários</span>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" className="bg-red-50 text-red-700 hover:bg-red-100 text-xs sm:text-sm px-2 sm:px-3" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Sair
@@ -379,22 +383,55 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                                   className="h-8 w-8 p-0"
                                   disabled={downloadingPdfId === inspection.id}
                                   onClick={async () => {
+                                    if (!inspection.id) {
+                                      toast({
+                                        title: "Erro!",
+                                        description: "ID da inspeção não encontrado",
+                                        variant: "destructive",
+                                      })
+                                      return
+                                    }
+                                    
                                     setDownloadingPdfId(inspection.id)
                                     try {
                                       const { apiClient } = await import("@/lib/api")
-                                      const pdfBlob = await apiClient.generateInspectionReport(inspection.id)
-                                      const url = window.URL.createObjectURL(pdfBlob)
+                                      
+                                      console.log("[InspectionList] Iniciando geração de relatório para:", inspection.id)
+                                      
+                                      // Gerar relatório via API
+                                      const blob = await apiClient.generateInspectionReport(inspection.id)
+                                      
+                                      if (!blob || blob.size === 0) {
+                                        throw new Error("O arquivo PDF retornado está vazio")
+                                      }
+                                      
+                                      console.log("[InspectionList] Blob recebido, tamanho:", blob.size, "bytes")
+                                      
+                                      // Criar link de download
+                                      const url = URL.createObjectURL(blob)
                                       const link = document.createElement("a")
                                       link.href = url
-                                      link.download = `inspecao_${inspection.id}.pdf`
+                                      link.download = `relatorio-inspecao-${inspection.id}-${new Date().getTime()}.pdf`
                                       document.body.appendChild(link)
                                       link.click()
-                                      link.remove()
-                                      window.URL.revokeObjectURL(url)
+                                      
+                                      // Limpar após um pequeno delay
+                                      setTimeout(() => {
+                                        link.remove()
+                                        URL.revokeObjectURL(url)
+                                      }, 100)
+                                      
+                                      toast({
+                                        title: "Sucesso!",
+                                        description: "PDF gerado e baixado com sucesso",
+                                        variant: "success",
+                                      })
                                     } catch (error) {
+                                      console.error("[InspectionList] Erro ao gerar PDF:", error)
+                                      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido ao gerar o relatório"
                                       toast({
                                         title: "Erro ao baixar PDF",
-                                        description: "Não foi possível gerar o relatório PDF desta inspeção.",
+                                        description: errorMessage,
                                         variant: "destructive",
                                       })
                                     } finally {
@@ -465,16 +502,27 @@ export default function InspectionListEnhanced({ onCreateNew, onEdit, onShowProf
                                 setDownloadingPdfId(inspection.id)
                                 try {
                                   const { apiClient } = await import("@/lib/api")
-                                  const pdfBlob = await apiClient.generateInspectionReport(inspection.id)
-                                  const url = window.URL.createObjectURL(pdfBlob)
+                                  
+                                  // Gerar relatório via API
+                                  const blob = await apiClient.generateInspectionReport(inspection.id)
+                                  
+                                  // Criar link de download
+                                  const url = URL.createObjectURL(blob)
                                   const link = document.createElement("a")
                                   link.href = url
-                                  link.download = `inspecao_${inspection.id}.pdf`
+                                  link.download = `relatorio-inspecao-${inspection.id}-${new Date().getTime()}.pdf`
                                   document.body.appendChild(link)
                                   link.click()
                                   link.remove()
-                                  window.URL.revokeObjectURL(url)
+                                  URL.revokeObjectURL(url)
+                                  
+                                  toast({
+                                    title: "Sucesso!",
+                                    description: "PDF gerado e baixado com sucesso",
+                                    variant: "success",
+                                  })
                                 } catch (error) {
+                                  console.error("PDF Generation Error:", error)
                                   toast({
                                     title: "Erro ao baixar PDF",
                                     description: "Não foi possível gerar o relatório PDF desta inspeção.",
